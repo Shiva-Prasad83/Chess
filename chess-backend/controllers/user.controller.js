@@ -40,6 +40,9 @@ const login = async (req, res) => {
             return res.status(401).json({ message: "Invalid Credentials" });
         }
 
+        //For Every User Who Logs in, one accessToken and one refreshToken is created
+        // and stored in the cookies
+
         const accessToken = jwt.sign({ sub: user._id, role: user.role },
             process.env.JWT_ACCESS_SECRET,
             { expiresIn: "15m" })
@@ -95,7 +98,36 @@ const fetchMe = (req, res) => {
     }
 }
 
-const refresh = (req, res) => {
-
+const refresh = async (req, res) => {
+    try {
+        const { refreshToken } = req.cookies;
+        if (!refreshToken) {
+            return res.status(400).json({ message: "refreshToken Not Found" });
+        }
+        const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        if (payload.type != 'refresh') {
+            return res.status(400).json({ message: "refreshToken type is not refresh" });
+        }
+        const id = payload.sub;
+        const user = await User.findById(id);
+        if (!user) {
+            res.clearCookie(refreshToken, {
+                httpOnly: true,
+                path: '/auth/refresh',
+                secure: process.env.NODE_ENV === "production",
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            })
+            return res.status(400).json({ message: "Invalid refreshToken . User not found!!" });
+        }
+        const accessToken = jwt.sign({ sub: user._id, role: user.role }, process.env.JWT_ACCESS_SECRET, { expiresIn: "15m" });
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 15 * 60 * 1000
+        })
+        return res.status(201).json({ message: "OK" });
+    } catch (err) {
+        return res.status(500).json({ message: err.message });
+    }
 }
 module.exports = { signup, login, logout, fetchMe, refresh }
