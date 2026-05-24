@@ -9,7 +9,7 @@ function Home() {
     }
     return (
         <div className="relative overflow-hidden rounded-3xl">
-            {/* Background Chess Pieces */}
+
             <span className="absolute left-5 top-5 text-8xl text-white/5">
                 ♞
             </span>
@@ -22,25 +22,25 @@ function Home() {
                 ♜
             </span>
 
-            {/* Hero Section */}
+
             <div className="flex min-h-[75vh] flex-col items-center justify-center px-6 text-center">
-                {/* Main Icon */}
+
                 <div className="mb-6 text-7xl drop-shadow-lg sm:text-8xl">
                     ♚
                 </div>
 
-                {/* Heading */}
+
                 <h1 className="max-w-4xl bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-400 bg-clip-text text-4xl font-extrabold leading-tight text-transparent sm:text-6xl">
                     Master The Chess Board
                 </h1>
 
-                {/* Subtitle */}
+
                 <p className="mt-6 max-w-2xl text-base leading-relaxed text-gray-300 sm:text-lg">
                     Play intense chess battles, challenge your friends, improve your
                     strategy, and become the ultimate chess champion.
                 </p>
 
-                {/* Buttons */}
+
                 <div className="mt-10 flex flex-col gap-4 sm:flex-row">
                     <Link
                         to="/signup"
@@ -57,7 +57,7 @@ function Home() {
                     </Link>
                 </div>
 
-                {/* Features */}
+
                 <div className="mt-16 grid w-full max-w-5xl grid-cols-1 gap-6 md:grid-cols-3">
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition hover:-translate-y-1 hover:bg-white/10">
                         <div className="mb-3 text-4xl">♞</div>

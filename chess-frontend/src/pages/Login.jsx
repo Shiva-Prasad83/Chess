@@ -49,7 +49,7 @@ function Login() {
 
         <div className="flex min-h-[75vh] items-center justify-center px-4">
             <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-md">
-                {/* Chess Background */}
+
                 <span className="absolute -left-6 top-4 text-8xl text-white/5">♞</span>
                 <span className="absolute -right-4 bottom-4 text-8xl text-white/5">♜</span>
 
@@ -79,9 +79,9 @@ function Login() {
 
                         <button
                             type="submit"
-                            className="w-full rounded-xl bg-yellow-400 px-4 py-3 font-bold text-black shadow-lg transition hover:bg-yellow-300 active:scale-[0.98]"
+                            className="w-full rounded-xl cursor-pointer bg-yellow-400 px-4 py-3 font-bold text-white text-lg shadow-lg transition hover:bg-yellow-300 active:scale-[0.98]"
                         >
-                            Login ♟
+                            Login ♔
                         </button>
                     </form>
                 </div>

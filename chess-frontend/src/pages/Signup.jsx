@@ -38,7 +38,7 @@ function Signup() {
 
         <div className="flex min-h-[75vh] items-center justify-center px-4">
             <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-md">
-                {/* Chess Background */}
+
                 <span className="absolute -left-6 top-6 text-8xl text-white/5">♟</span>
                 <span className="absolute -right-5 bottom-5 text-8xl text-white/5">♚</span>
 

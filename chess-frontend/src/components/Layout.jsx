@@ -11,10 +11,10 @@ function Layout() {
     return (
 
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-900 to-slate-800 text-white">
-            {/* Navbar */}
+
             <nav className="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur-md">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-                    {/* Logo */}
+
                     <Link to="/" className="flex items-center gap-2">
                         <span className="text-3xl">♛</span>
                         <div>
@@ -25,7 +25,7 @@ function Layout() {
                         </div>
                     </Link>
 
-                    {/* Links */}
+
                     <div className="flex items-center gap-3 text-sm font-medium">
                         {!user ? (
                             <>
@@ -68,7 +68,7 @@ function Layout() {
 
                                 <button
                                     onClick={handleLogout}
-                                    className="rounded-lg bg-red-500 px-4 py-2 font-semibold text-white shadow-md transition hover:bg-red-600"
+                                    className="rounded-lg cursor-pointer bg-red-500 px-4 py-2 font-semibold text-white shadow-md transition hover:bg-red-600"
                                 >
                                     Logout
                                 </button>
@@ -78,7 +78,7 @@ function Layout() {
                 </div>
             </nav>
 
-            {/* Background Chess Pieces */}
+
             <div className="pointer-events-none fixed inset-0 overflow-hidden">
                 <span className="absolute left-5 top-28 text-7xl text-white/5">♞</span>
                 <span className="absolute right-8 top-40 text-8xl text-white/5">♜</span>
@@ -86,7 +86,7 @@ function Layout() {
                 <span className="absolute bottom-24 right-16 text-7xl text-white/5">♚</span>
             </div>
 
-            {/* Main Content */}
+
             <main className="relative mx-auto max-w-6xl px-4 py-8">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur-sm sm:p-8">
                     <Outlet />
