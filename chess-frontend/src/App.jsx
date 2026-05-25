@@ -10,6 +10,7 @@ import Lobby from './pages/Lobby';
 import { useDispatch } from 'react-redux'
 import { fetchMe } from './slices/authSlice'
 import Profile from './pages/Profile'
+import Room from './pages/Room'
 function App() {
   const dispatch = useDispatch();
 
@@ -24,6 +25,7 @@ function App() {
         <Route path='/signup' element={<Signup />} />
         <Route element={<ProtectedRoute />}>
           <Route path='/lobby' element={<Lobby />} />
+          <Route path='/rooms/:roomCode' element={<Room />} />
           <Route path='/profile' element={<Profile />} />
         </Route>
 
