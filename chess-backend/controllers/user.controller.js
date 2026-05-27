@@ -71,6 +71,7 @@ const login = async (req, res) => {
 }
 
 const logout = (req, res) => {
+
     try {
         res.clearCookie('accessToken', {
             httpOnly: true,
@@ -83,6 +84,7 @@ const logout = (req, res) => {
             secure: process.env.NODE_ENV === 'production',
             maxAge: 7 * 24 * 60 * 60 * 1000
         })
+        //console.log(req.cookies, "Request.cookies");
         return res.status(200).json({ message: 'OK' });
     } catch (err) {
         return res.status(500).json({ message: err.message });

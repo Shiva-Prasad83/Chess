@@ -25,6 +25,7 @@ function Lobby() {
         connectSocket();
         //Here roomCode is the state variable which has the input value.
         socket.emit('room:join', roomCode, (response) => {
+            console.log(response, "Join Room Response");
             if (!response.ok) {
                 return alert(response.message || "Failed to join room");
             }

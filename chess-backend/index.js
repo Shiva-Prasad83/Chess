@@ -34,7 +34,7 @@ const io = new Server(server, {
 io.use(async (socket, next) => {
     try {
         const cookieHeader = socket.handshake.headers.cookie || "";
-        // console.log(cookieHeader, 'cookieHeader');
+        //console.log(cookieHeader, 'cookieHeader');
         //console.log(typeof cookieHeader, "Cookies Header");
         /*
         cookieHeader=accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -103,6 +103,7 @@ io.on('connection', (socket) => {
             })
             rooms.set(roomCode, newRoom);
             io.to(roomCode).emit("room:presence", newRoom);
+            //console.log(rooms, "Rooms map while creating newRoom");
             return ack?.({ ok: true, room: newRoom });
         } catch (err) {
             return ack?.({ ok: false, message: err.message || "Failed to create room" });
@@ -124,7 +125,7 @@ io.on('connection', (socket) => {
         */
         try {
             const existingRoom = rooms.get(roomCode);
-            console.log(existingRoom, "existing Room");
+            console.log(existingRoom, "Trying to join the room");
             if (!existingRoom) {
                 return ack({ ok: false, message: 'Room Not Found' });
             }
@@ -135,6 +136,7 @@ io.on('connection', (socket) => {
 
             if (!alreadyExists) {
                 //console.log('user not exists')
+                //console.log(existingRoom, "Checking players.length");
                 if (existingRoom.players.length === 2) {
                     console.log('Room is full');
                     return ack({ ok: false, message: "Room is full" })
@@ -148,7 +150,7 @@ io.on('connection', (socket) => {
             } else {
                 //If the user already in the room, but disconnected and tried to connect with new
                 //socketId with same roomCode.
-                //console.log('User already exits');
+                console.log('User already exits');
                 existingRoom.players = existingRoom.players.map((player) => {
                     if (player.userId.toString() === socket.user._id.toString()) {
                         return { ...player, socketId: socket.id };

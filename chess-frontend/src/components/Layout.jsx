@@ -1,12 +1,24 @@
 import React from 'react'
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../slices/authSlice';
+import { ToastContainer, toast } from 'react-toastify';
 function Layout() {
     const user = useSelector((state) => state.authReducer.user);
     const dispatch = useDispatch();
-    const handleLogout = () => {
-        dispatch(logout());
+    const notify = (message) => toast(message)
+    const navigate = useNavigate()
+    const handleLogout = async () => {
+        try {
+            const res = await dispatch(logout()).unwrap();
+            console.log(res, 'Response after logout');
+            if (res.message === "OK") {
+                toast('Logout Successful');
+                navigate('/login');
+            }
+        } catch (err) {
+            return notify(err.message || "Logout Failed");
+        }
     }
     return (
 
@@ -92,6 +104,7 @@ function Layout() {
                     <Outlet />
                 </div>
             </main>
+            <ToastContainer />
         </div>
         // <div>
         //     <h1>Layout</h1>

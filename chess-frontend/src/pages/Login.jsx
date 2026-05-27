@@ -12,7 +12,7 @@ function Login() {
         //console.log(state)
         return state.authReducer;
     })
-    console.log(user, authChecked, "Checking the behaviour");
+    //console.log(user, authChecked, "Checking the behaviour");
 
     if (user) {
         return <Navigate to="/lobby" />
