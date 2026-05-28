@@ -10,7 +10,7 @@ api.interceptors.response.use((response) => {
     return response;
 },
     async (error) => {
-        console.log(error.config);
+        //console.log(error.config);
         const originalRequest = error.config;
         const isAlreadyRefresh = originalRequest.url.includes('/auth/refresh')
         if (error.response.status === 401 && !originalRequest.retry && !isAlreadyRefresh) {

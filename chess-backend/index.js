@@ -178,6 +178,38 @@ io.on('connection', (socket) => {
             return ack({ ok: false, message: err.message || 'Failed to join Room' });
         }
     });
+
+    socket.on('room:leave', (roomCode, ack) => {
+        if (!roomCode) {
+            return ack?.({ ok: false, message: "Required roomCode" });
+        }
+        const leavingRoom = rooms.get(roomCode);
+        if (!leavingRoom) {
+            return ack?.({ ok: false, message: "Invalid roomCode" });
+        }
+        //Check if the user exists in the room or not. Because, if the room code is leaked, then others might click on
+        // leave in which they are not part. That's why user should be in players array of the specific room.
+        let userExists = leavingRoom?.players?.some((player) => player.userId.toString() === socket.user._id.toString());
+        if (!userExists) {
+            return ack?.({ ok: false, message: "Invalid User" })
+        }
+
+        console.log(rooms, 'Before deleting the player');
+
+        //Removing the user or player from the leavingRoom.
+        leavingRoom.players = leavingRoom.players.filter((player) => player.userId.toString() !== socket.user._id.toString());
+
+        //we need to update the rooms map, because still one player is left the room
+        rooms.set(roomCode, leavingRoom);
+        console.log(rooms, 'After Deleting the player');
+        //If the room is empty then delete the room
+        if (leavingRoom.players.length === 0) {
+            rooms.delete(roomCode);
+            console.log(rooms, "After deleting the room itself");
+            return ack?.({ ok: true, message: "Room deleted" });
+        }
+        return ack?.({ ok: true, message: "Left Room" });
+    })
 })
 
 server.listen(PORT, () => {
