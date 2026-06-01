@@ -3,11 +3,19 @@ import { connectSocket, socket } from '../socket'
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react'
 import { useSelector } from 'react-redux';
-
+import { Chessboard } from 'react-chessboard';
+import { ToastContainer, toast } from 'react-toastify';
 function Room() {
     const [room, setRoom] = useState(null);
+    // const [roomCreator, setRoomCreator] = useState(false);
+    const [showBoard, setShowBoard] = useState(false);
     const { roomCode } = useParams();
-    const { user } = useSelector((state) => state.authReducer);
+    const notify = (message) => toast(message);
+    const { user } = useSelector((state) => {
+        //console.log(state.authReducer)
+        return state.authReducer
+    });
+    //console.log(user);
     const navigate = useNavigate();
     useEffect(() => {
         connectSocket();
@@ -24,7 +32,11 @@ function Room() {
             setRoom(data);
         }
         socket.on('room:presence', roomPresence);
-
+        socket.on('game:started', (response) => {
+            if (response.ok) {
+                navigate(`/game/${roomCode}`);
+            }
+        })
         return () => {
             socket.off('room:presence', roomPresence);
         }
@@ -35,9 +47,34 @@ function Room() {
                 alert(response.message)
                 navigate('/lobby');
             }
+            setRoom(response.room);
             return navigate('/lobby');
         })
     }
+    const roomCreator = room?.players?.some((player) => {
+        if (player.userId.toString() === user._id.toString() && player.createdRoom) {
+            return true;
+        }
+    });
+
+    function startGame() {
+        if (room.players.length !== 2 || room?.status === "waiting") {
+            return notify('Waiting for Opponent');
+        }
+        // Step1: The person who created the room can only start the game.
+        // Step2: Emit the start:game event from the frontend, make the backend listen to it.
+        // Step3: Emit game:started event from the backend, on success navigate the user to Game.jsx
+
+        socket.emit('start:game', roomCode, (response) => {
+            if (!response.ok) {
+                return notify(response.message);
+            }
+            notify(response.message);
+            navigate(`/game/${roomCode}`);
+        })
+
+    }
+
     return (
         <div>
             <h1 className='text-2xl font-bold'>roomCode:{roomCode}</h1>
@@ -50,16 +87,25 @@ function Room() {
                     //     }
                     //     return <li>{player.name} (Opponent)</li>
                     // })
-                    room?.players.map((player, index) => <li key={player.socketId}>{
-                        player.userId.toString() === user._id.toString() ? player.name + " (Me)" : player.name
-                    }</li>)
+                    room?.players.map((player, index) => {
+                        return <li key={player.socketId}>{
+                            player.userId.toString() === user._id.toString() ? player.name + " (Me)" : player.name
+                        }</li>
+                    })
                 }
             </ul>
+            {/* room?.status === "ready" && <button className='bg-green-400 p-4 rounded-lg cursor-pointer'>Start Game</button> */}
 
             <div className='flex gap-4'>
-                {room?.status === "ready" && <button className='bg-green-400 p-4 rounded-lg cursor-pointer'>Start Game</button>}
+                {
+                    roomCreator && <button className='bg-green-400 p-4 rounded-lg cursor-pointer'
+                        onClick={startGame}
+                    >{room?.status === "ready" ? "Start Game" : "Waiting for Opponent"}</button>
+                }
                 <button className='bg-red-400 p-4 rounded-lg cursor-pointer' onClick={leaveRoom}>Leave Room</button>
             </div>
+
+            <ToastContainer />
         </div>
     )
 }

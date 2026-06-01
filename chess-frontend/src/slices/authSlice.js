@@ -61,7 +61,8 @@ console.log(initialState, 'initial State');
 const authSlice = createSlice({
     name: 'auth',
     initialState,
-    reducers: {},
+    reducers: {
+    },
     extraReducers: (builder) => {
         function pending(state) {
             state.status = 'pending'

@@ -1,5 +1,6 @@
 const express = require('express');
 const { authRouter } = require('./routes/auth.router.js');
+const { Chess } = require('chess.js');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
@@ -66,10 +67,42 @@ function getRoomCode(len = 6) {
     return roomCode;
 }
 
+//Another helper function to remove game property from the room, because its length is very big
+//so can't send that room object with game property:new Chess().
+//We have to remove the game property from that room and return the new object.
+
+function getPublicRoom(room) {
+    //Removed the game property, because its size is very big.
+    //now this object will be sent to the client or frontend from wherever we are emitting the event
+    //and return room from ack() funtion.
+    return {
+        roomCode: room.roomCode,
+        players: room.players,
+        status: room.status,
+        createdAt: room.createdAt,
+        fen: room.fen,
+        whiteId: room.whiteId,
+        blackId: room.blackId,
+        lastMove: room.lastMove
+    }
+}
+
 //All rooms that are created will be stored in rooms map.
 let rooms = new Map();
 console.log(rooms, 'All Rooms');
-//Structure --> roomCode:{roomCode,players:[{userId,socketId,name}],status:'waiting'||'ready',createdAt}
+/*Structure -->
+ roomCode:{
+ roomCode,
+ players:[{userId,socketId,name}],
+ status:'waiting'||'ready',
+ createdAt,
+ game:new Chess(),
+ fen:new Chess().fen(),
+ whiteId:null,
+ blackId:null,
+ lastMove:null
+ }
+*/
 io.on('connection', (socket) => {
     console.log("A User Connected with socket_id: ", socket.id);
     socket.on("room:create", (ack) => {
@@ -93,18 +126,27 @@ io.on('connection', (socket) => {
                 roomCode,
                 players: [],
                 status: 'waiting',
-                createdAt: Date.now()
+                createdAt: Date.now(),
+                game: new Chess(),
+                fen: new Chess().fen(),
+                whiteId: null,
+                blackId: null,
+                lastMove: null,
             }
             socket.join(roomCode);
             newRoom.players.push({
                 userId: socket.user._id,
                 socketId: socket.id,
-                name: socket.user.name
+                name: socket.user.name,
+                createdRoom: true
             })
             rooms.set(roomCode, newRoom);
-            io.to(roomCode).emit("room:presence", newRoom);
+
+            // io.to(roomCode).emit("room:presence", newRoom);
+            //Sending public room which has no game property.
+            io.to(roomCode).emit("room:presence", getPublicRoom(newRoom));
             //console.log(rooms, "Rooms map while creating newRoom");
-            return ack?.({ ok: true, room: newRoom });
+            return ack?.({ ok: true, room: getPublicRoom(newRoom) });
         } catch (err) {
             return ack?.({ ok: false, message: err.message || "Failed to create room" });
         }
@@ -158,10 +200,19 @@ io.on('connection', (socket) => {
                     return player;
                 })
             }
-            existingRoom.status = existingRoom.players.length === 2 ? "ready" : "waiting";
+            //existingRoom.status = existingRoom.players.length === 2 ? "ready" : "waiting";
+            //The player who joins the room first, will get the white pieces and player
+            //who joins second, will get black pieces.
+            if (existingRoom.players.length === 2) {
+                existingRoom.whiteId = existingRoom.players[0].userId;
+                existingRoom.blackId = existingRoom.players[1].userId;
+                existingRoom.status = "ready";
+            } else {
+                existingRoom.status = "waiting";
+            }
             socket.join(roomCode);
-            io.to(roomCode).emit("room:presence", existingRoom);
-            return ack({ ok: true, room: existingRoom });
+            io.to(roomCode).emit("room:presence", getPublicRoom(existingRoom));
+            return ack({ ok: true, room: getPublicRoom(existingRoom) });
             //Own Understanding Code but some edge cases are missing.
             // if (existingRoom.players.length >= 2) {
             //     return ack({ ok: false, message: "Room is full" });
@@ -180,35 +231,61 @@ io.on('connection', (socket) => {
     });
 
     socket.on('room:leave', (roomCode, ack) => {
-        if (!roomCode) {
-            return ack?.({ ok: false, message: "Required roomCode" });
-        }
-        const leavingRoom = rooms.get(roomCode);
-        if (!leavingRoom) {
-            return ack?.({ ok: false, message: "Invalid roomCode" });
-        }
-        //Check if the user exists in the room or not. Because, if the room code is leaked, then others might click on
-        // leave in which they are not part. That's why user should be in players array of the specific room.
-        let userExists = leavingRoom?.players?.some((player) => player.userId.toString() === socket.user._id.toString());
-        if (!userExists) {
-            return ack?.({ ok: false, message: "Invalid User" })
-        }
+        try {
+            if (!roomCode) {
+                return ack?.({ ok: false, message: "Required roomCode" });
+            }
+            const leavingRoom = rooms.get(roomCode);
+            if (!leavingRoom) {
+                return ack?.({ ok: false, message: "Invalid roomCode" });
+            }
+            //Check if the user exists in the room or not. Because, if the room code is leaked, then others might click on
+            // leave in which they are not part. That's why user should be in players array of the specific room.
+            let userExists = leavingRoom?.players?.some((player) => player.userId.toString() === socket.user._id.toString());
+            if (!userExists) {
+                return ack?.({ ok: false, message: "Invalid User" })
+            }
 
-        console.log(rooms, 'Before deleting the player');
+            //console.log(rooms, 'Before deleting the player');
 
-        //Removing the user or player from the leavingRoom.
-        leavingRoom.players = leavingRoom.players.filter((player) => player.userId.toString() !== socket.user._id.toString());
-
-        //we need to update the rooms map, because still one player is left the room
-        rooms.set(roomCode, leavingRoom);
-        console.log(rooms, 'After Deleting the player');
-        //If the room is empty then delete the room
-        if (leavingRoom.players.length === 0) {
-            rooms.delete(roomCode);
-            console.log(rooms, "After deleting the room itself");
-            return ack?.({ ok: true, message: "Room deleted" });
+            //Removing the user or player from the leavingRoom.
+            leavingRoom.players = leavingRoom.players.filter((player) => player.userId.toString() !== socket.user._id.toString());
+            socket.leave(roomCode);
+            //updating the status of the room to waiting after removing the players from the room.
+            leavingRoom.status = "waiting";
+            //we need to update the rooms map, because still one player is left the room
+            rooms.set(roomCode, leavingRoom);
+            //console.log(rooms, 'After Deleting the player');
+            //If the room is empty then delete the room
+            if (leavingRoom.players.length === 0) {
+                rooms.delete(roomCode);
+                //console.log(rooms, "After deleting the room itself");
+                return ack?.({ ok: true, message: "Room deleted" });
+            }
+            io.to(roomCode).emit("room:presence", getPublicRoom(leavingRoom));
+            return ack?.({ ok: true, room: getPublicRoom(leavingRoom) });
+        } catch (err) {
+            return ack?.({ ok: false, message: err?.message || "Failed to leave room" });
         }
-        return ack?.({ ok: true, message: "Left Room" });
+    });
+
+    socket.on('start:game', (roomCode, ack) => {
+        const room = rooms.get(roomCode);
+        if (!room && room.players.length !== 2) {
+            return ack?.({ ok: false, message: "Room doesn't exists" });
+        }
+        io.to(roomCode).emit('game:started', { ok: true });
+        return ack?.({ ok: true, message: "Starting Game" })
+    })
+
+
+    // Game related events
+    socket.on("game:state", (roomCode, ack) => {
+        let room = rooms.get(roomCode);
+        if (!room) {
+            return ack?.({ ok: false, message: "Room does not exist" });
+        }
+        return ack?.({ ok: true, room: getPublicRoom(room) });
     })
 })
 
