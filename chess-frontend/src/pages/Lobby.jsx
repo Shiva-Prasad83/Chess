@@ -46,8 +46,6 @@ function Lobby() {
             < button className='bg-green-500 p-2 rounded-lg cursor-pointer'
                 onClick={joinRoom}
             >Join Room</button>
-
-
         </div>
     )
 }

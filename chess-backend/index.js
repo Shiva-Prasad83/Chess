@@ -87,6 +87,17 @@ function getPublicRoom(room) {
     }
 }
 
+function getPublicState(room) {
+    return {
+        roomCode: room.roomCode,
+        fen: room.game.fen(),
+        turn: room.game.turn(),
+        whiteId: room.whiteId,
+        blackId: room.blackId,
+        lastMove: room.lastMove
+    }
+}
+
 //All rooms that are created will be stored in rooms map.
 let rooms = new Map();
 console.log(rooms, 'All Rooms');
@@ -167,7 +178,7 @@ io.on('connection', (socket) => {
         */
         try {
             const existingRoom = rooms.get(roomCode);
-            console.log(existingRoom, "Trying to join the room");
+            // console.log(existingRoom, "Trying to join the room");
             if (!existingRoom) {
                 return ack({ ok: false, message: 'Room Not Found' });
             }
@@ -280,12 +291,77 @@ io.on('connection', (socket) => {
 
 
     // Game related events
+    //Frontend emits these events
     socket.on("game:state", (roomCode, ack) => {
         let room = rooms.get(roomCode);
         if (!room) {
             return ack?.({ ok: false, message: "Room does not exist" });
         }
-        return ack?.({ ok: true, room: getPublicRoom(room) });
+        return ack?.({ ok: true, gameState: getPublicState(room) });
+    })
+
+    //Whenever the player makes a move, this event will trigger
+    /*
+    "game:move" event will be triggered when the piece on the chessboard is moved or dragged.
+     Steps:
+     here room.game:new Chess() which has all the information about the game, like whose turn it is currently, is the game over, is the game drawn etc.
+    1. we have to know which player has moved the piece, check the socket.user._id === room.whiteId or room.blackId
+    2. we have to check whether the player who has moved the pieces, is it really his turn or not. Check this using room.game.turn -> this gives w or b
+    if player is w and turn is b then that is invalid move because it is not his turn.
+    3. we need to pass the move made by player to the room.game.move() function so that it calculate whether the move made by user valid or not
+    ex:let move=room.game.move({from,to,promotion:'q'})
+    if move is invalid then throw error message using ack function.
+    4.store the lastMove={from,to};
+    5.emit the "game:update" event from the backend and the updated room state to the frontend, based on the FEN String inside the room
+    frontend updates the board.
+    6. We need to check whether the move made is checkmate or Draw (could be stalemate) and we need send the winnner to the frontend
+    by emitting the "game:over" event from backend.
+    */
+    socket.on("game:move", (roomCode, from, to, promotion, ack) => {
+        try {
+            const room = rooms.get(roomCode);
+            if (!room) return ack?.({ ok: false, message: "Room not found" });
+            let player = "none";
+            if (socket.user._id.toString() === room.whiteId.toString()) {
+                player = "w";
+            } else if (socket.user._id.toString() === room.blackId.toString()) {
+                player = "b";
+            }
+            if (player === "none") {
+                return ack?.({ ok: false, message: "Invalid Player" });
+            }
+            let turn = room.game.turn()//w or b turn
+            if (player !== turn) {
+                return ack?.({ ok: false, message: "Not your turn" });
+            }
+            let move = room.game.move({
+                from,
+                to,
+                promotion: 'q',
+            })
+            if (!move) {
+                return ack?.({ ok: false, message: "Invalid move" });
+            }
+            room.lastMove = {
+                from,
+                to
+            }
+            //"game:update" is the event emitted from backend to frontend whenever there is an update in a game.
+            io.to(roomCode).emit("game:update", getPublicState(room));
+
+            //Checking whether game is completed, the move could checkmate the opponent king.
+            if (room.game.isGameOver()) {
+                let result = "gameover";
+                if (room.game.isCheckmate()) {
+                    result = player// room.game.turn()
+                } else if (room.game.isDraw()) {
+                    result = "Draw"
+                }
+                io.to(roomCode).emit("game:over", result);
+            }
+        } catch (err) {
+            return ack?.({ ok: false, message: err.message });
+        }
     })
 })
 

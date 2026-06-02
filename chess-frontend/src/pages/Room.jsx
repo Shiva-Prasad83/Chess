@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react'
-import { connectSocket, socket } from '../socket'
+import React, { useEffect } from 'react';
+import { connectSocket, socket } from '../socket';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useState } from 'react'
+import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Chessboard } from 'react-chessboard';
 import { ToastContainer, toast } from 'react-toastify';
