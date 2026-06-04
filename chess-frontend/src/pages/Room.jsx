@@ -3,7 +3,6 @@ import { connectSocket, socket } from '../socket';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Chessboard } from 'react-chessboard';
 import { ToastContainer, toast } from 'react-toastify';
 function Room() {
     const [room, setRoom] = useState(null);
@@ -32,13 +31,15 @@ function Room() {
             setRoom(data);
         }
         socket.on('room:presence', roomPresence);
-        socket.on('game:started', (response) => {
+        const gameStart = (response) => {
             if (response.ok) {
                 navigate(`/game/${roomCode}`);
             }
-        })
+        }
+        socket.on('game:started', gameStart);
         return () => {
             socket.off('room:presence', roomPresence);
+            socket.off('game:started', gameStart);
         }
     }, [roomCode]);
     function leaveRoom() {

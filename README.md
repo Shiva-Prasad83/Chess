@@ -1,3 +1,35 @@
+Important points.
+
+1) room structure:{
+    roomCode,
+    players:[{name,userId,socketId}],
+    status:"waiting"||"ready"
+    createdAt:Date.now(),
+    whiteId,
+    blackId,
+    game:new Chess(),
+    fen:game.fen(),
+    lastMove:{}
+}
+
+2) While creating the room, the user in pushed into the room.players and this player as extra property called createdRoom:true.
+When another user tries to join using roomCode, if the room.players.length===2, then
+we give room.whiteId=players[0].userId 
+room.blackId=players[1].userId
+The person who creates the room, will get the white pieces.
+
+3) Understand events emitting from frontend in Components like
+-> Lobby.jsx
+-> Room.jsx
+-> Game.jsx
+
+4) Understand the events frontend is listening.
+
+5) Backend emits the room:presence event to entire room, so that the sockets connected to the room
+will get the update.
+
+
+
 Chess-Game Project Flow:
 
 -> user1 gets login and redirected to /lobby page.user1 has two options create room or join room
@@ -99,9 +131,17 @@ rooms={
 4) room:presence --> is the event emitted from backend to the entire room, whenever there is an update inside the room object.
 
 Game related events.
-game:update
-Whenever the player makes a move, this event will trigger
-    "game:move" event will be triggered when the piece on the chessboard is moved or dragged.
+
+1) game:state event emitted from frontend gets the room without game:new Chess() property and
+with fen(String) and turn.
+fen String and turn came from game.fen() and game.turn() -> game:new Chess();
+
+new Chess() has all information about the game, like valid move, gameOver, gameDraw.
+
+this fen String is given to the <Chessboard position=fen/> That how the pieces on the Chess board moves.
+.
+
+2) "game:move" event will be triggered when the piece on the chessboard is moved or dragged.
      Steps:
      here room.game:new Chess() which has all the information about the game, like whose turn it is currently, is the game over, is the game drawn etc.
     1. we have to know which player has moved the piece, check the socket.user._id === room.whiteId or room.blackId

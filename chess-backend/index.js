@@ -356,6 +356,12 @@ io.on('connection', (socket) => {
                     result = player// room.game.turn()
                 } else if (room.game.isDraw()) {
                     result = "Draw"
+                } else if (room.game.isStalemate()) {
+                    result = "Stalemate"
+                } else if (room.gate.isThreefoldRepetition()) {
+                    result = "Draw By Repetition"
+                } else if (room.gate.isInsufficientMaterial()) {
+                    result = "Draw By Insufficient Material"
                 }
                 io.to(roomCode).emit("game:over", result);
             }
