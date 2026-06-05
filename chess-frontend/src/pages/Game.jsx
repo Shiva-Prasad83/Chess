@@ -10,7 +10,6 @@ function Game() {
     const [turn, setTurn] = useState(null);
     const [room, setRoom] = useState(null);
     const [result, setResult] = useState("");
-    const [gameOver, setGameOver] = useState(false);
     const { roomCode } = useParams();
     const notify = (message) => toast(message);
     useEffect(() => {
@@ -39,7 +38,6 @@ function Game() {
         socket.on('game:update', gameUpdate);
 
         function gameOver(result) {
-            setGameOver(true);
             setResult(result);
         }
         socket.on('game:over', gameOver);
@@ -102,7 +100,7 @@ function Game() {
                         boardOrientation={piecesColor}
                         arePiecesDraggable={result ? false : true}
                     /> :
-                        <h1>{result === "w" ? "White is the Winner" : result === "b" ? "Black is the winner" : result}</h1>
+                        <h1>{result === "white" ? "White is the Winner" : result === "black" ? "Black is the winner" : result}</h1>
                     }
                 </div>
 

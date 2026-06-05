@@ -9,6 +9,7 @@ const cookie = require('cookie');
 const jwt = require('jsonwebtoken');
 const http = require('http');
 const User = require('./models/user.model.js');
+const { Game } = require('./models/game.model.js');
 require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT;
@@ -114,6 +115,61 @@ console.log(rooms, 'All Rooms');
  lastMove:null
  }
 */
+async function updateUsersWithGameDetails(room, result, reason) {
+    //Compare the maxWinning before currentWinningStreak becomes 0.
+    try {
+        const whiteUser = await User.findById(room.whiteId);
+        const blackUser = await User.findById(room.blackId);
+        console.log(whiteUser, "whiteUser");
+        console.log(blackUser, "blackUser");
+        if (result === "draw") {
+            whiteUser.stats.gamesPlayed += 1;
+            whiteUser.stats.draws += 1;
+            // whiteUser.stats.maxWinningStreak = Math.max(whiteUser.stats.currentWinningStreak, whiteUser.stats.maxWinningStreak);
+            whiteUser.stats.currentWinningStreak = 0;
+
+            blackUser.stats.gamesPlayed += 1;
+            blackUser.stats.draws += 1;
+            //blackUser.stats.maxWinningStreak = Math.max(blackUser.stats.currenWinningStreak, blackUser.stats.maxWinningStreak);
+            blackUser.stats.currentWinningStreak = 0;
+        } else if (result === "white") {
+            whiteUser.stats.gamesPlayed += 1;
+            whiteUser.stats.wins += 1;
+            whiteUser.stats.currentWinningStreak += 1;
+            whiteUser.stats.maxWinningStreak = Math.max(whiteUser.stats.currentWinningStreak, whiteUser.stats.maxWinningStreak);
+            //rating works like now white won, if the black's rating is higher than the white, then white will get +12
+            //else +8 rating.
+            whiteUser.stats.rating += whiteUser.stats.rating <= blackUser.stats.rating ? 12 : 8;
+
+            blackUser.stats.gamesPlayed += 1;
+            blackUser.stats.loses += 1;
+            blackUser.stats.maxWinningStreak = Math.max(blackUser.stats.currentWinningStreak, blackUser.stats.maxWinningStreak);
+            blackUser.stats.currentWinningStreak = 0
+            //black lost here, if black's rating is higher than the white, then black loses -12
+            //else -8 rating.
+            blackUser.stats.rating -= blackUser.stats.rating >= whiteUser.stats.rating ? 12 : 8;
+        } else if (result === "black") {
+            blackUser.stats.wins += 1;
+            blackUser.stats.gamesPlayed += 1;
+            blackUser.stats.currentWinningStreak += 1;
+            blackUser.stats.maxWinningStreak = Math.max(blackUser.stats.currenWinningStreak, blackUser.stats.maxWinningStreak);
+            blackUser.stats.rating += blackUser.stats.rating <= whiteUser.stats.rating ? 12 : 8;
+
+
+            whiteUser.stats.loses += 1;
+            whiteUser.stats.gamesPlayed += 1;
+            whiteUser.stats.maxWinningStreak = Math.max(whiteUser.stats.currentWinningStreak, whiteUser.stats.maxWinningStreak);
+            whiteUser.stats.currentWinningStreak = 0;
+            whiteUser.stats.rating -= whiteUser.stats.rating >= blackUser.stats.rating ? 12 : 8;
+        }
+
+        await whiteUser.save();
+        await blackUser.save();
+    } catch (err) {
+        console.log(err, "This is the error")
+        //throw new Error("Unable to update user with game details");
+    }
+}
 io.on('connection', (socket) => {
     console.log("A User Connected with socket_id: ", socket.id);
     socket.on("room:create", (ack) => {
@@ -317,7 +373,7 @@ io.on('connection', (socket) => {
     6. We need to check whether the move made is checkmate or Draw (could be stalemate) and we need send the winnner to the frontend
     by emitting the "game:over" event from backend.
     */
-    socket.on("game:move", (roomCode, from, to, promotion, ack) => {
+    socket.on("game:move", async (roomCode, from, to, promotion, ack) => {
         try {
             const room = rooms.get(roomCode);
             if (!room) return ack?.({ ok: false, message: "Room not found" });
@@ -351,18 +407,54 @@ io.on('connection', (socket) => {
 
             //Checking whether game is completed, the move could checkmate the opponent king.
             if (room.game.isGameOver()) {
-                let result = "gameover";
+                let reason = "others"
+                let result = "Draw";
+                // if (room.game.isCheckmate()) {
+                //     reason = "checkmate";
+                //     result = player == "w" ? "white" : "black";// room.game.turn()
+                // } else if (room.game.isDraw()) {
+                //     reason = "Draw";
+                //     result = "Draw"
+                // } else if (room.game.isStalemate()) {
+                //     reason = "Draw"
+                //     result = "Stalemate"
+                // } else if (room.game.isThreefoldRepetition()) {
+                //     reason = "Draw";
+                //     result = "Draw By Repetition"
+                //     console.log("Draw by repetition");
+                // } else if (room.game.isInsufficientMaterial()) {
+                //     reason = "Draw"
+                //     result = "Draw By Insufficient Material"
+                // }
                 if (room.game.isCheckmate()) {
-                    result = player// room.game.turn()
-                } else if (room.game.isDraw()) {
-                    result = "Draw"
+                    reason = "checkmate";
+                    result = player === "w" ? "white" : "black";
+                } else if (room.game.isThreefoldRepetition()) {
+                    reason = "threefold repetition";
+                    result = "draw";
+                } else if (room.game.isInsufficientMaterial()) {
+                    reason = "insufficient material";
+                    result = "draw";
                 } else if (room.game.isStalemate()) {
-                    result = "Stalemate"
-                } else if (room.gate.isThreefoldRepetition()) {
-                    result = "Draw By Repetition"
-                } else if (room.gate.isInsufficientMaterial()) {
-                    result = "Draw By Insufficient Material"
+                    reason = "stalemate";
+                    result = "draw";
+                } else if (room.game.isDraw()) {
+                    reason = "draw";
+                    result = "draw";
                 }
+
+                const game = new Game({
+                    roomCode,
+                    whiteId: room.whiteId,
+                    blackId: room.blackId,
+                    result,
+                    reason,
+                    startedAt: new Date(room.createdAt),
+                    endedAt: Date.now(),
+                    duration: Date.now() - room.createdAt
+                })
+                await game.save();
+                updateUsersWithGameDetails(room, result, reason);
                 io.to(roomCode).emit("game:over", result);
             }
         } catch (err) {

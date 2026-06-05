@@ -7,13 +7,13 @@ const userSchema = mongoose.Schema({
     role: { type: String, default: "USER", enum: ["USER", "ADMIN"] },
     avatar: { type: String, default: "" },
     stats: {
-        rating: { type: Number, default: "1200" },
+        rating: { type: Number, default: 1200 },
         wins: { type: Number, default: 0 },
         loses: { type: Number, default: 0 },
         draws: { type: Number, default: 0 },
         gamesPlayed: { type: Number, default: 0 },
-        currentStreak: { type: Number, default: 0 },
-        maxStreak: { type: Number, default: 0 }
+        currentWinningStreak: { type: Number, default: 0 },
+        maxWinningStreak: { type: Number, default: 0 }
     }
 }, {
     timestamps: true
