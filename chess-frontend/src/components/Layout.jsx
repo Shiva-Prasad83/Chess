@@ -63,6 +63,10 @@ function Layout() {
                                     Profile
                                 </Link>
 
+                                <Link to="/leaderboard" className="rounded px-3 py-2 hover:bg-gray-700">
+                                    Leaderboard
+                                </Link>
+
                                 <button
                                     onClick={handleLogout}
                                     className="rounded bg-red-500 px-3 py-2 font-semibold hover:bg-red-600"

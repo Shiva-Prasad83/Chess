@@ -12,6 +12,7 @@ import { fetchMe } from './slices/authSlice'
 import Profile from './pages/Profile'
 import Room from './pages/Room'
 import Game from './pages/Game'
+import Leaderboard from './pages/Leaderboard'
 function App() {
   const dispatch = useDispatch();
 
@@ -29,6 +30,7 @@ function App() {
           <Route path='/rooms/:roomCode' element={<Room />} />
           <Route path='/profile' element={<Profile />} />
           <Route path='/game/:roomCode' element={<Game />} />
+          <Route path='/leaderboard' element={<Leaderboard />} />
         </Route>
       </Route>
     </Routes>

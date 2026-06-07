@@ -22,7 +22,7 @@ function Login() {
         const formData = new FormData(e.target);
         const email = formData.get('email')
         const password = formData.get('password');
-        console.log(email, password);
+        //console.log(email, password);
         //.unwrap()is used because dispatch() will return the data from the authSlice
         //in the form of object
         //Lets say dispatch(login()) is failed because of invalid crendentials and we didn't
@@ -39,8 +39,7 @@ function Login() {
             }
             navigate('/lobby');
         } catch (err) {
-            notify('Login failed');
-            console.log(err || "login failed");
+            notify(err);
         }
 
         e.target.reset();

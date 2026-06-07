@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken');
 const http = require('http');
 const User = require('./models/user.model.js');
 const { Game } = require('./models/game.model.js');
+const { leaderboardRouter } = require('./routes/leaderboard.router.js');
 require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT;
@@ -22,7 +23,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 app.use("/auth", authRouter);
-
+app.use("/leaderboard", leaderboardRouter);
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -116,6 +117,7 @@ console.log(rooms, 'All Rooms');
  }
 */
 async function updateUsersWithGameDetails(room, result, reason) {
+    console.log(result, "Result from backend");
     //Compare the maxWinning before currentWinningStreak becomes 0.
     try {
         const whiteUser = await User.findById(room.whiteId);
@@ -149,10 +151,11 @@ async function updateUsersWithGameDetails(room, result, reason) {
             //else -8 rating.
             blackUser.stats.rating -= blackUser.stats.rating >= whiteUser.stats.rating ? 12 : 8;
         } else if (result === "black") {
+            console.log("Saving Black player details");
             blackUser.stats.wins += 1;
             blackUser.stats.gamesPlayed += 1;
             blackUser.stats.currentWinningStreak += 1;
-            blackUser.stats.maxWinningStreak = Math.max(blackUser.stats.currenWinningStreak, blackUser.stats.maxWinningStreak);
+            blackUser.stats.maxWinningStreak = Math.max(blackUser.stats.currentWinningStreak, blackUser.stats.maxWinningStreak);
             blackUser.stats.rating += blackUser.stats.rating <= whiteUser.stats.rating ? 12 : 8;
 
 

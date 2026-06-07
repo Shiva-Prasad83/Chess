@@ -100,7 +100,8 @@ function Game() {
                         boardOrientation={piecesColor}
                         arePiecesDraggable={result ? false : true}
                     /> :
-                        <h1>{result === "white" ? "White is the Winner" : result === "black" ? "Black is the winner" : result}</h1>
+                        <h1>{result === "white" ? `${user.name} -> (White) is the Winner` : result === "black" ?
+                            `${opponentPlayer.name} -> (Black) is the winner` : result}</h1>
                     }
                 </div>
 
