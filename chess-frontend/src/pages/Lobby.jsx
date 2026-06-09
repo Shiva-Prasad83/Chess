@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { connectSocket, socket } from '../socket';
 import { useNavigate } from 'react-router-dom';
-
 function Lobby() {
     const [roomCode, setRoomCode] = useState("");
     const navigate = useNavigate();
@@ -33,45 +32,6 @@ function Lobby() {
         })
     }
     return (
-        // <div className='flex gap-4 items-center'>
-        //     <button className='bg-yellow-400 text-white rounded-lg cursor-pointer p-2'
-        //         onClick={createRoom}
-        //     >Create Room</button>
-        //     <p>OR</p>
-        //     <input type="text" placeholder='Enter Room Code'
-        //         className='border p-2 rounded-lg'
-        //         value={roomCode}
-        //         onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-        //     />
-        //     < button className='bg-green-500 p-2 rounded-lg cursor-pointer'
-        //         onClick={joinRoom}
-        //     >Join Room</button>
-        // </div>
-        // <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-        //     <button
-        //         className="w-full rounded-lg bg-yellow-400 p-2 text-black sm:w-auto"
-        //         onClick={createRoom}
-        //     >
-        //         Create Room
-        //     </button>
-
-        //     <p className="text-center">OR</p>
-
-        //     <input
-        //         type="text"
-        //         placeholder="Enter Room Code"
-        //         className="w-full rounded-lg border p-2 text-black sm:w-48"
-        //         value={roomCode}
-        //         onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-        //     />
-
-        //     <button
-        //         className="w-full rounded-lg bg-green-500 p-2 text-white sm:w-auto"
-        //         onClick={joinRoom}
-        //     >
-        //         Join Room
-        //     </button>
-        // </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
             <button
                 className="w-full rounded-lg bg-yellow-400 p-2 text-black sm:w-auto"
@@ -98,6 +58,48 @@ function Lobby() {
             </button>
         </div>
     )
+
 }
 
 export default Lobby
+
+
+// <div className='flex gap-4 items-center'>
+//     <button className='bg-yellow-400 text-white rounded-lg cursor-pointer p-2'
+//         onClick={createRoom}
+//     >Create Room</button>
+//     <p>OR</p>
+//     <input type="text" placeholder='Enter Room Code'
+//         className='border p-2 rounded-lg'
+//         value={roomCode}
+//         onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+//     />
+//     < button className='bg-green-500 p-2 rounded-lg cursor-pointer'
+//         onClick={joinRoom}
+//     >Join Room</button>
+// </div>
+// <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+//     <button
+//         className="w-full rounded-lg bg-yellow-400 p-2 text-black sm:w-auto"
+//         onClick={createRoom}
+//     >
+//         Create Room
+//     </button>
+
+//     <p className="text-center">OR</p>
+
+//     <input
+//         type="text"
+//         placeholder="Enter Room Code"
+//         className="w-full rounded-lg border p-2 text-black sm:w-48"
+//         value={roomCode}
+//         onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+//     />
+
+//     <button
+//         className="w-full rounded-lg bg-green-500 p-2 text-white sm:w-auto"
+//         onClick={joinRoom}
+//     >
+//         Join Room
+//     </button>
+// </div>

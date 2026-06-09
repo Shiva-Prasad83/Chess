@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { connectSocket, socket } from '../socket';
 import { useSelector } from 'react-redux';
 import { Chessboard } from '@gustavotoyota/react-chessboard';
@@ -12,6 +12,8 @@ function Game() {
     const [result, setResult] = useState("");
     const { roomCode } = useParams();
     const notify = (message) => toast(message);
+
+
     useEffect(() => {
         connectSocket();
         socket.emit('room:join', roomCode, (response) => {
@@ -48,6 +50,8 @@ function Game() {
             socket.off('game:over', gameOver);
         }
     }, []);
+
+
     //console.log(room, user);
     //Current player and opponent player and which the color the player is playing with.
     //To Check we added whiteId and blackId properties in the room in the backend and sent to frontend
@@ -89,7 +93,9 @@ function Game() {
                     <p className="truncate">
                         Opponent: {opponentPlayer?.name}
                     </p>
-                    {!piecesColor.includes(turn) && <p>*</p>}
+                    <div>
+                        {!piecesColor.includes(turn) && <p>*</p>}
+                    </div>
                 </div>
 
                 <div className="w-full">
@@ -108,8 +114,12 @@ function Game() {
                 <div className="mt-2 flex justify-between p-2">
                     <p className="truncate">
                         You: {user.name}
+
                     </p>
-                    {piecesColor.includes(turn) && <p>*</p>}
+                    <div>
+                        {piecesColor.includes(turn) && <p>*</p>}
+                    </div>
+
                 </div>
 
             </div>

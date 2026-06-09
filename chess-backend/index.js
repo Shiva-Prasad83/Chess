@@ -115,6 +115,17 @@ console.log(rooms, 'All Rooms');
  blackId:null,
  lastMove:null
  }
+ We need to handle timers for both white users and black users, so the logic will be like this
+ const baseMs=5*60*1000;
+ const incrementMs=0; 
+ newRoom.timeControl={baseMs,incrementMs};
+ newRoom.clock={
+ whiteMs:baseMs,
+ blackMs:baseMs,
+ active:"w",
+ running:false,
+ lastSwitch:null
+ }
 */
 async function updateUsersWithGameDetails(room, result, reason) {
     console.log(result, "Result from backend");
@@ -210,6 +221,20 @@ io.on('connection', (socket) => {
                 name: socket.user.name,
                 createdRoom: true
             })
+
+            //Timers logic
+            const baseMs = 5 * 60 * 1000;
+            const incrementMs = 0;
+
+            newRoom.timeControl = { baseMs, incrementMs };
+            newRoom.clock = {
+                whiteMs: baseMs,
+                blackMs: baseMs,
+                active: "w",
+                running: false,
+                lastSwitch: null
+            }
+
             rooms.set(roomCode, newRoom);
 
             // io.to(roomCode).emit("room:presence", newRoom);
