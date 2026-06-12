@@ -10,6 +10,9 @@ function Game() {
     const [turn, setTurn] = useState(null);
     const [room, setRoom] = useState(null);
     const [result, setResult] = useState("");
+    const [reason, setReason] = useState("");
+    const [whiteMs, setWhiteMs] = useState("");
+    const [blackMs, setBlackMs] = useState("");
     const { roomCode } = useParams();
     const notify = (message) => toast(message);
 
@@ -28,6 +31,8 @@ function Game() {
             }
             setFen(response.gameState.fen);
             setTurn(response.gameState.turn);
+            setWhiteMs(response?.clock.whiteMs);
+            setBlackMs(response?.clock.blackMs);
         })
         function roomPresence(data) {
             setRoom(data);
@@ -39,15 +44,34 @@ function Game() {
         }
         socket.on('game:update', gameUpdate);
 
-        function gameOver(result) {
+        function gameOver({ result, reason }) {
             setResult(result);
+            setReason(reason);
         }
         socket.on('game:over', gameOver);
+        function timeOut({ result, reason }) {
+            //console.log("Time out", result);
+            setResult(result);
+            setReason(reason);
+        }
+        socket.on('time:out', timeOut);
 
+        //clock is coming from the backend by emittin update:clock emit
+        function onClock(clock) {
+            console.log(clock, "This is clock");
+            if (roomCode !== clock.roomCode) {
+                return;
+            }
+            setWhiteMs(clock.whiteMs);
+            setBlackMs(clock.blackMs);
+        }
+        socket.on('clock:update', onClock);
         return () => {
             socket.off('room:presence', roomPresence);
             socket.off('game:update', gameUpdate);
             socket.off('game:over', gameOver);
+            socket.off('clock:update', onClock);
+            socket.off('time:out', timeOut);
         }
     }, []);
 
@@ -76,6 +100,13 @@ function Game() {
         return true;
     }
     //console.log(fen, "fen");
+
+    //Timer Calculations
+    const whiteMinutes = Math.floor((whiteMs / 1000) / 60).toString();
+    const whiteSeconds = Math.floor((whiteMs / 1000) % 60).toString();
+
+    const blackMinutes = Math.floor((blackMs / 1000) / 60).toString();
+    const blackSeconds = Math.floor((blackMs / 1000) % 60).toString();
     return (
         // <div className='w-[480px]'>
         //     <p className='text-lg font-bold text-white'>Turn:{turn}</p>
@@ -93,9 +124,15 @@ function Game() {
                     <p className="truncate">
                         Opponent: {opponentPlayer?.name}
                     </p>
-                    <div>
+                    {!result && <div className='flex items-center gap-4'>
                         {!piecesColor.includes(turn) && <p>*</p>}
-                    </div>
+                        {
+                            user._id.toString() === room?.blackId.toString() ?
+                                <h1>{`${whiteMinutes.padStart(2, "0")} : ${whiteSeconds.padStart(2, "0")}`}</h1> :
+                                <h1>{`${blackMinutes.padStart(2, "0")} : ${blackSeconds.padStart(2, "0")}`}</h1>
+                        }
+
+                    </div>}
                 </div>
 
                 <div className="w-full">
@@ -106,20 +143,27 @@ function Game() {
                         boardOrientation={piecesColor}
                         arePiecesDraggable={result ? false : true}
                     /> :
-                        <h1>{result === "white" ? `${user.name} -> (White) is the Winner` : result === "black" ?
-                            `${opponentPlayer.name} -> (Black) is the winner` : result}</h1>
+                        <div>
+                            <h1>{result === "white" ? `${room.players[0].name} -> (White) is the Winner` : result === "black" ?
+                                `${room.players[1].name} -> (Black) is the winner` : result}</h1>
+                            <h1>{reason}</h1>
+                        </div>
                     }
                 </div>
 
                 <div className="mt-2 flex justify-between p-2">
                     <p className="truncate">
                         You: {user.name}
-
                     </p>
-                    <div>
+                    {!result && <div className='flex items-center gap-4'>
                         {piecesColor.includes(turn) && <p>*</p>}
+                        {
+                            user._id.toString() === room?.whiteId.toString() ?
+                                <h1>{`${whiteMinutes.padStart(2, "0")} : ${whiteSeconds.padStart(2, "0")}`}</h1> :
+                                <h1>{`${blackMinutes.padStart(2, "0")} : ${blackSeconds.padStart(2, "0")}`}</h1>
+                        }
                     </div>
-
+                    }
                 </div>
 
             </div>

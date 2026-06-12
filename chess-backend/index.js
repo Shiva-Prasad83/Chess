@@ -100,6 +100,14 @@ function getPublicState(room) {
     }
 }
 
+function getPublicClock(room) {
+    return {
+        ...room.clock,
+        roomCode: room.roomCode
+    }
+}
+
+
 //All rooms that are created will be stored in rooms map.
 let rooms = new Map();
 console.log(rooms, 'All Rooms');
@@ -223,10 +231,8 @@ io.on('connection', (socket) => {
             })
 
             //Timers logic
-            const baseMs = 5 * 60 * 1000;
-            const incrementMs = 0;
-
-            newRoom.timeControl = { baseMs, incrementMs };
+            const baseMs = 10 * 60 * 1000;
+            //newRoom.timeControl = { baseMs, incrementMs };
             newRoom.clock = {
                 whiteMs: baseMs,
                 blackMs: baseMs,
@@ -302,10 +308,19 @@ io.on('connection', (socket) => {
                 existingRoom.whiteId = existingRoom.players[0].userId;
                 existingRoom.blackId = existingRoom.players[1].userId;
                 existingRoom.status = "ready";
+
+                //Initializing the clock after two are joined.
+                //This event will be emitted when user clicks join room button
+                // As well as When User comes Game.jsx so, this will be executed two or three
+                // times so that we get the lastest time for lastSwitch.
+                existingRoom.clock.running = true;
+                existingRoom.clock.lastSwitch = Date.now();
+                existingRoom.clock.active = "w";
             } else {
                 existingRoom.status = "waiting";
             }
             socket.join(roomCode);
+            io.to(roomCode).emit("clock:update", getPublicClock(existingRoom));
             io.to(roomCode).emit("room:presence", getPublicRoom(existingRoom));
             return ack({ ok: true, room: getPublicRoom(existingRoom) });
             //Own Understanding Code but some edge cases are missing.
@@ -381,7 +396,7 @@ io.on('connection', (socket) => {
         if (!room) {
             return ack?.({ ok: false, message: "Room does not exist" });
         }
-        return ack?.({ ok: true, gameState: getPublicState(room) });
+        return ack?.({ ok: true, gameState: getPublicState(room), clock: getPublicClock(room) });
     })
 
     //Whenever the player makes a move, this event will trigger
@@ -430,6 +445,47 @@ io.on('connection', (socket) => {
                 from,
                 to
             }
+            let now = Date.now();
+            let timeCompleted = now - room.clock.lastSwitch;
+            if (room.clock.active === "w") {
+                room.clock.whiteMs -= timeCompleted;
+                room.clock.active = "b";
+                room.clock.lastSwitch = now;
+            } else {
+                room.clock.blackMs -= timeCompleted;
+                room.clock.active = "w";
+                room.clock.lastSwitch = now;
+            }
+
+            //check if the timer of any player has become to zero and become - values
+            //If any player's timer reaches to zero or minus values then we need to end the game
+            //by emitting the game:over event
+            room.clock.whiteMs = Math.max(0, room.clock.whiteMs);
+            room.clock.blackMs = Math.max(0, room.clock.blackMs);
+            io.to(roomCode).emit("clock:update", getPublicClock(room));
+            if (room.clock.whiteMs === 0 || room.clock.blackMs === 0) {
+                room.clock.running = false;
+                const result = room.clock.whiteMs === 0 ? "black" : "white";
+                const reason = "Time out";
+                io.to(roomCode).emit("time:out", { result, reason });
+                //The game is over, so just saving the game to the database.
+                const game = new Game({
+                    roomCode,
+                    whiteId: room.whiteId,
+                    blackId: room.blackId,
+                    result,
+                    reason,
+                    startedAt: new Date(room.createdAt),
+                    endedAt: Date.now(),
+                    duration: Date.now() - room.createdAt
+                });
+                await game.save();
+                //Just updating the players stats.
+                updateUsersWithGameDetails(room, result, reason);
+                //emitting the game:over event.
+                return;
+            }
+
             //"game:update" is the event emitted from backend to frontend whenever there is an update in a game.
             io.to(roomCode).emit("game:update", getPublicState(room));
 
@@ -483,7 +539,7 @@ io.on('connection', (socket) => {
                 })
                 await game.save();
                 updateUsersWithGameDetails(room, result, reason);
-                io.to(roomCode).emit("game:over", result);
+                io.to(roomCode).emit("game:over", { result, reason });
             }
         } catch (err) {
             return ack?.({ ok: false, message: err.message });
