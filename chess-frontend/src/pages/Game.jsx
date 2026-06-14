@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { connectSocket, socket } from '../socket';
 import { useSelector } from 'react-redux';
 import { Chessboard } from '@gustavotoyota/react-chessboard';
-import { useParams } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 function Game() {
     const { user } = useSelector((state) => state.authReducer);
@@ -15,7 +15,9 @@ function Game() {
     const [blackMs, setBlackMs] = useState("");
     const { roomCode } = useParams();
     const notify = (message) => toast(message);
-
+    if (!user) {
+        return <Navigate to="/login" />
+    }
 
     useEffect(() => {
         connectSocket();

@@ -11,6 +11,7 @@ const http = require('http');
 const User = require('./models/user.model.js');
 const { Game } = require('./models/game.model.js');
 const { leaderboardRouter } = require('./routes/leaderboard.router.js');
+const parser = require('./utilities/uploadProfile.js');
 require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT;
@@ -22,6 +23,15 @@ app.use(cors({
 }))
 app.use(express.json());
 app.use(cookieParser());
+//uploading profile.
+app.post('/upload', parser.single('profile'), (req, res) => {
+    try {
+        const url = req.file.path;
+        return res.status(201).json({ profileImageUrl: url });
+    } catch (err) {
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+})
 app.use("/auth", authRouter);
 app.use("/leaderboard", leaderboardRouter);
 const server = http.createServer(app);
@@ -136,7 +146,8 @@ console.log(rooms, 'All Rooms');
  }
 */
 async function updateUsersWithGameDetails(room, result, reason) {
-    console.log(result, "Result from backend");
+    console.log("Running on time out");
+    //console.log(result, "Result from backend");
     //Compare the maxWinning before currentWinningStreak becomes 0.
     try {
         const whiteUser = await User.findById(room.whiteId);
@@ -231,7 +242,7 @@ io.on('connection', (socket) => {
             })
 
             //Timers logic
-            const baseMs = 10 * 60 * 1000;
+            const baseMs = 10 * 1000;
             //newRoom.timeControl = { baseMs, incrementMs };
             newRoom.clock = {
                 whiteMs: baseMs,
@@ -479,9 +490,9 @@ io.on('connection', (socket) => {
                     endedAt: Date.now(),
                     duration: Date.now() - room.createdAt
                 });
+                await updateUsersWithGameDetails(room, result, reason);
                 await game.save();
                 //Just updating the players stats.
-                updateUsersWithGameDetails(room, result, reason);
                 //emitting the game:over event.
                 return;
             }
@@ -538,7 +549,7 @@ io.on('connection', (socket) => {
                     duration: Date.now() - room.createdAt
                 })
                 await game.save();
-                updateUsersWithGameDetails(room, result, reason);
+                await updateUsersWithGameDetails(room, result, reason);
                 io.to(roomCode).emit("game:over", { result, reason });
             }
         } catch (err) {

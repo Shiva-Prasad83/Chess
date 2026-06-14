@@ -1,7 +1,7 @@
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchMe, login } from '../slices/authSlice';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 function Login() {
     const navigate = useNavigate();
@@ -45,58 +45,125 @@ function Login() {
         e.target.reset();
     }
     return (
+        <div className="flex min-h-[60vh] w-full items-center justify-center overflow-hidden px-2 py-4">
 
-        <div className="flex min-h-[75vh] items-center justify-center px-4">
-            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur-md">
+            <div className="
+        relative w-full max-w-md overflow-hidden 
+        rounded-3xl border border-indigo-200
+        bg-gradient-to-br from-indigo-50 via-white to-blue-100
+        p-6 sm:p-8
+        shadow-2xl shadow-indigo-300/30
+    ">
 
-                <span className="absolute -left-6 top-4 text-8xl text-white/5">♞</span>
-                <span className="absolute -right-4 bottom-4 text-8xl text-white/5">♜</span>
+                {/* Chess Background */}
+                <div className="absolute inset-0 pointer-events-none">
+
+                    <span className="absolute -left-4 top-4 text-8xl text-indigo-200/50 animate-float">
+                        ♔
+                    </span>
+
+                    <span className="absolute right-3 top-2 text-6xl text-blue-200/50 animate-float-slow">
+                        ♞
+                    </span>
+
+                    <span className="absolute -right-5 bottom-0 text-9xl text-indigo-200/40 animate-float">
+                        ♜
+                    </span>
+
+                </div>
+
 
                 <div className="relative z-10">
-                    <div className="mb-6 text-center">
-                        <div className="mb-2 text-5xl">♛</div>
-                        <h1 className="text-3xl font-bold text-white">Login</h1>
-                        <p className="mt-2 text-sm text-gray-300">
-                            Enter the board and continue your game
+
+                    <div className="text-center">
+
+                        <div className="
+                    mx-auto grid h-16 w-16 place-items-center
+                    rounded-full bg-gradient-to-br
+                    from-indigo-600 to-blue-600
+                    text-3xl text-white shadow-lg
+                ">
+                            ♔
+                        </div>
+
+
+                        <h1 className="mt-5 text-3xl font-extrabold text-slate-900">
+                            Welcome Back
+                        </h1>
+
+
+                        <p className="mt-2 text-sm text-slate-600">
+                            Return to the battlefield and claim victory
                         </p>
+
                     </div>
 
-                    <form onSubmit={handleLogin} className="space-y-4">
+
+                    <form onSubmit={handleLogin} className="mt-8 space-y-4">
+
                         <input
                             type="email"
-                            placeholder="Email"
                             name="email"
-                            className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none placeholder:text-gray-400 focus:border-yellow-400"
+                            placeholder="Email Address"
+                            className="
+                    w-full rounded-xl border border-indigo-200
+                    bg-white/70 px-4 py-3 text-slate-900
+                    outline-none backdrop-blur
+                    focus:border-indigo-500
+                    focus:bg-white transition
+                "
                         />
+
 
                         <input
                             type="password"
-                            placeholder="Password"
                             name="password"
-                            className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none placeholder:text-gray-400 focus:border-yellow-400"
+                            placeholder="Password"
+                            className="
+                    w-full rounded-xl border border-indigo-200
+                    bg-white/70 px-4 py-3 text-slate-900
+                    outline-none backdrop-blur
+                    focus:border-indigo-500
+                    focus:bg-white transition
+                "
                         />
+
 
                         <button
                             type="submit"
-                            className="w-full rounded-xl cursor-pointer bg-yellow-400 px-4 py-3 font-bold text-white text-lg shadow-lg transition hover:bg-yellow-300 active:scale-[0.98]"
+                            className="
+                    w-full rounded-xl cursor-pointer
+                    bg-gradient-to-r from-indigo-600 to-blue-600
+                    px-4 py-3 font-bold text-white
+                    shadow-lg shadow-indigo-400/40
+                    transition hover:scale-[1.02]
+                    hover:from-indigo-700 hover:to-blue-700
+                "
                         >
                             Login ♔
                         </button>
+
                     </form>
+
+
+                    <p className="mt-6 text-center text-sm text-slate-600">
+
+                        Don't have an account?
+
+                        <Link
+                            to="/signup"
+                            className="ml-1 font-bold text-indigo-700 hover:text-blue-700"
+                        >
+                            Signup
+                        </Link>
+
+                    </p>
+
                 </div>
 
-                <ToastContainer />
             </div>
+
         </div>
-        // <div>
-        //     <h1>Login</h1>
-        //     <form onSubmit={handleLogin}>
-        //         <input type="email" placeholder='Email' name='email' />
-        //         <input type="password" placeholder='Password' name='password' />
-        //         <button type='submit'>Login</button>
-        //     </form>
-        //     <ToastContainer />
-        // </div>
     )
 }
 

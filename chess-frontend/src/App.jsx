@@ -27,12 +27,12 @@ function App() {
         <Route path='/signup' element={<Signup />} />
         <Route element={<ProtectedRoute />}>
           <Route path='/lobby' element={<Lobby />} />
-          <Route path='/rooms/:roomCode' element={<Room />} />
           <Route path='/profile' element={<Profile />} />
-          <Route path='/game/:roomCode' element={<Game />} />
           <Route path='/leaderboard' element={<Leaderboard />} />
         </Route>
       </Route>
+      <Route path='/game/:roomCode' element={<Game />} />
+      <Route path='/rooms/:roomCode' element={<Room />} />
     </Routes>
   </BrowserRouter>
 }
