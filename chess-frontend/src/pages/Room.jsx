@@ -20,6 +20,7 @@ function Room() {
     useEffect(() => {
         navigate(`/rooms/${roomCode}`)
     }, [room])
+
     useEffect(() => {
         connectSocket();
         //joining room, for the second time, even if the room creator also will be joined the room for the second time because
@@ -46,6 +47,11 @@ function Room() {
             socket.off('game:started', gameStart);
         }
     }, [roomCode]);
+
+    const meExistInRoom = room?.players.some((player) => player.userId.toString() === user._id.toString());
+    if (!meExistInRoom) {
+        return <Navigate to="/lobby" />
+    }
 
     if (!user) {
         return <Navigate to={"/login"} replace />

@@ -152,8 +152,8 @@ async function updateUsersWithGameDetails(room, result, reason) {
     try {
         const whiteUser = await User.findById(room.whiteId);
         const blackUser = await User.findById(room.blackId);
-        console.log(whiteUser, "whiteUser");
-        console.log(blackUser, "blackUser");
+        //console.log(whiteUser, "whiteUser");
+        //console.log(blackUser, "blackUser");
         if (result === "draw") {
             whiteUser.stats.gamesPlayed += 1;
             whiteUser.stats.draws += 1;
@@ -242,7 +242,7 @@ io.on('connection', (socket) => {
             })
 
             //Timers logic
-            const baseMs = 10 * 1000;
+            const baseMs = 1 * 60 * 1000;
             //newRoom.timeControl = { baseMs, incrementMs };
             newRoom.clock = {
                 whiteMs: baseMs,
