@@ -5,7 +5,7 @@ const gameSchema = mongoose.Schema({
     whiteId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     blackId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     result: { type: String, enum: ["white", "black", "draw"], required: true },
-    reason: { type: String, enum: ["checkmate", "draw", "timeout", "resign", "other"], required: true },
+    reason: { type: String, enum: ["checkmate", "draw", "timeout", "resign", "timeout", "other"], required: true },
     startedAt: { type: Date, default: Date.now() },
     endedAt: { type: Date, default: null },
     duration: { type: Number, default: 0 }

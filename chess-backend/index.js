@@ -12,6 +12,7 @@ const User = require('./models/user.model.js');
 const { Game } = require('./models/game.model.js');
 const { leaderboardRouter } = require('./routes/leaderboard.router.js');
 const parser = require('./utilities/uploadProfile.js');
+const { timeStamp } = require('console');
 require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT;
@@ -92,7 +93,7 @@ function getPublicRoom(room) {
         players: room.players,
         status: room.status,
         createdAt: room.createdAt,
-        fen: room.fen,
+        fen: room.game.fen(),
         whiteId: room.whiteId,
         blackId: room.blackId,
         lastMove: room.lastMove
@@ -252,6 +253,14 @@ io.on('connection', (socket) => {
                 lastSwitch: null
             }
 
+            //When the user wants to chat with the other player, those chats will be stored here.
+            /*
+            [
+            {
+            userId:socket.user._id, name:socket.user.name, message:text  }
+            ]
+            */
+            newRoom.chat = [];
             rooms.set(roomCode, newRoom);
 
             // io.to(roomCode).emit("room:presence", newRoom);
@@ -323,10 +332,17 @@ io.on('connection', (socket) => {
                 //Initializing the clock after two are joined.
                 //This event will be emitted when user clicks join room button
                 // As well as When User comes Game.jsx so, this will be executed two or three
-                // times so that we get the lastest time for lastSwitch.
-                existingRoom.clock.running = true;
-                existingRoom.clock.lastSwitch = Date.now();
-                existingRoom.clock.active = "w";
+                // times so that we get the lastest time for lastSwitch.\
+
+
+                //On every page refresh, this room:join event is getting triggered, so on refresh
+                //this code executes, if the if condition is not written, then on every refresh the 
+                //the clock.active will be white "w" it should be the case. That we added the if condition.
+                if (!existingRoom.clock.running) {
+                    existingRoom.clock.running = true;
+                    existingRoom.clock.lastSwitch = Date.now();
+                    existingRoom.clock.active = "w";
+                }
             } else {
                 existingRoom.status = "waiting";
             }
@@ -403,6 +419,7 @@ io.on('connection', (socket) => {
     // Game related events
     //Frontend emits these events
     socket.on("game:state", (roomCode, ack) => {
+        console.log('Game state on every refresh');
         let room = rooms.get(roomCode);
         if (!room) {
             return ack?.({ ok: false, message: "Room does not exist" });
@@ -477,7 +494,7 @@ io.on('connection', (socket) => {
             if (room.clock.whiteMs === 0 || room.clock.blackMs === 0) {
                 room.clock.running = false;
                 const result = room.clock.whiteMs === 0 ? "black" : "white";
-                const reason = "Time out";
+                const reason = "timeout";
                 io.to(roomCode).emit("time:out", { result, reason });
                 //The game is over, so just saving the game to the database.
                 const game = new Game({
@@ -552,6 +569,86 @@ io.on('connection', (socket) => {
                 await updateUsersWithGameDetails(room, result, reason);
                 io.to(roomCode).emit("game:over", { result, reason });
             }
+        } catch (err) {
+            return ack?.({ ok: false, message: err.message });
+        }
+    })
+
+    socket.on('send:message', (roomCode, text, ack) => {
+        try {//Check if the room is valid or not.
+            const room = rooms.get(roomCode);
+            if (!room) return ack?.({ ok: false, message: 'Room Not Found' });
+
+            const clean = text.trim();
+            if (!clean) return ack?.({ ok: false, message: 'Message Empty' });
+            //Checking if the message is sent by the player who is inside in the room or is it 
+            // sent by the others
+            const isPlayer = room?.players.some((p) => p.userId.toString() === socket.user._id.toString());
+            if (!isPlayer) {
+                return ack?.({ ok: false, message: 'Invalid User' });
+            }
+            if (clean.length > 300) {
+                return ack?.({ ok: false, message: "Message exceeded 300 characters" });
+            }
+            const message = {
+                userId: socket.user._id,
+                name: socket.user.name,
+                text: clean,
+                timeStamp: Date.now()
+            }
+            room.chat.push(message);
+            if (room.chat.length === 50) {
+                room.chat.shift();
+            }
+            console.log('Message came and sending to the frontend');
+            io.to(roomCode).emit('new:message', message);
+            return ack?.({ ok: true, message });
+        } catch (err) {
+            return ack?.({ ok: false, message: err.message });
+        }
+
+    })
+
+    socket.on('chat:history', (roomCode, ack) => {
+        try {
+            const room = rooms.get(roomCode);
+            if (!room) return ack?.({ ok: false, message: "Room Not Found" });
+            //Check if the player belongs to this room or not.
+            const isPlayer = room.players.some((p) => p.userId.toString() === socket.user._id.toString());
+            if (!isPlayer) {
+                return ack?.({ ok: false, message: "Invalid Player" });
+            }
+            return ack?.({ ok: true, messages: room.chat });
+        } catch (err) {
+            return ack?.({ ok: false, message: err.message });
+        }
+    })
+
+    socket.on('player:resign', async (roomCode, playerId, ack) => {
+
+        try {
+            const room = rooms.get(roomCode);
+            if (!room) return ack?.({ ok: false, message: "Invalid Room" });
+
+            const isPlayer = room.players.some((p) => p.userId.toString() === playerId.toString());
+            if (!isPlayer) {
+                return ack?.({ ok: false, message: "Invalid Player" });
+            }
+            const result = room.whiteId.toString() === playerId.toString() ? "black" : "white";
+            const reason = "resign";
+            const game = new Game({
+                roomCode,
+                whiteId: room.whiteId,
+                blackId: room.blackId,
+                result,
+                reason,
+                startedAt: new Date(room.createdAt),
+                endedAt: Date.now(),
+                duration: Date.now() - room.createdAt
+            });
+            await game.save();
+            await updateUsersWithGameDetails(room, result, reason);
+            io.to(roomCode).emit('game:over', { result, reason });
         } catch (err) {
             return ack?.({ ok: false, message: err.message });
         }

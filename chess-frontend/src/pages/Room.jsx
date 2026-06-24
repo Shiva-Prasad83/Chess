@@ -28,7 +28,9 @@ function Room() {
         // And this room:presence event will give live updates.
         socket.emit('room:join', roomCode, (response) => {
             if (!response.ok) {
-                return alert(response.message || "Failed to join room");
+                alert(response.message || "Failed to join room");
+                navigate('/lobby');
+                return;
             }
             setRoom(response.room);
         })
