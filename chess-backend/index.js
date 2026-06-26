@@ -91,6 +91,7 @@ function getPublicRoom(room) {
     return {
         roomCode: room.roomCode,
         players: room.players,
+        spectators: room.spectators,
         status: room.status,
         createdAt: room.createdAt,
         fen: room.game.fen(),
@@ -651,6 +652,20 @@ io.on('connection', (socket) => {
             io.to(roomCode).emit('game:over', { result, reason });
         } catch (err) {
             return ack?.({ ok: false, message: err.message });
+        }
+    })
+
+    socket.on('disconnect', () => {
+        for (let [roomCode, room] of rooms) {
+            const isThisRoom = room.players.some((p) => p.userId.toString() === socket.user._id.toString());
+            if (isThisRoom) {
+                if (room.players.length === 0) {
+                    rooms.delete(roomCode);
+                } else {
+                    room.players = room.players.filter((p) => p.socketId.toString() !== socket.user._id.toString());
+                }
+                io.to(roomCode).emit('room:presence', getPublicRoom(room));
+            }
         }
     })
 })

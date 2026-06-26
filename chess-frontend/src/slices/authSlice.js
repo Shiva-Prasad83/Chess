@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../api/client";
+import { socket } from "../socket";
 export const login = createAsyncThunk('auth/login', async ({ email, password }, thunkAPI) => {
     try {
         const res = await api.post('auth/login',
@@ -25,6 +26,7 @@ export const signup = createAsyncThunk('auth/signup', async ({ name, email, pass
 
 export const logout = createAsyncThunk('auth/logout', async (_, thunkAPI) => {
     try {
+        socket.disconnect();
         const res = await api.post('auth/logout');
         return res.data;
     } catch (err) {

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { connectSocket, socket } from '../socket';
 import { useNavigate, Link } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
 function Lobby() {
     const [roomCode, setRoomCode] = useState("");
     const navigate = useNavigate();
+    const notify = (message) => toast(message);
     function createRoom() {
         connectSocket();
         //This callback function is passed as an argument to the backend.
@@ -26,7 +28,8 @@ function Lobby() {
         socket.emit('room:join', roomCode, (response) => {
             console.log(response, "Join Room Response");
             if (!response.ok) {
-                return alert(response.message || "Failed to join room");
+                notify(response.message || "Failed to join room");
+                return;
             }
             navigate(`/rooms/${roomCode}`);
         })
@@ -60,7 +63,7 @@ function Lobby() {
                         </p>
                         <button
                             onClick={createRoom}
-                            className="mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-3 font-bold text-white shadow-md shadow-indigo-500/30 transition hover:shadow-lg hover:brightness-110 active:scale-[0.98]"
+                            className="cursor-pointer mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-3 font-bold text-white shadow-md shadow-indigo-500/30 transition hover:shadow-lg hover:brightness-110 active:scale-[0.98]"
                         >
                             ＋ Create Room
                         </button>
@@ -107,16 +110,18 @@ function Lobby() {
                                     onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                                 />
                             </div>
+
                             <button
                                 onClick={joinRoom}
-                                className="mt-3 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3 font-bold text-white shadow-md shadow-emerald-500/30 transition hover:shadow-lg hover:brightness-110 active:scale-[0.98]"
+                                className="mt-3 cursor-pointer w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3 font-bold text-white shadow-md shadow-emerald-500/30 transition hover:shadow-lg hover:brightness-110 active:scale-[0.98]"
                             >
-                                → Join Room
+                                → Join as a Player
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
+            <ToastContainer />
         </div>
 
         // <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">

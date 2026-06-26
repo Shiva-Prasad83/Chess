@@ -16,6 +16,7 @@ function Room() {
         //console.log(state.authReducer)
         return state.authReducer
     });
+    console.log(room);
     //console.log(user);
     useEffect(() => {
         navigate(`/rooms/${roomCode}`)
@@ -61,10 +62,12 @@ function Room() {
     function leaveRoom() {
         socket.emit('room:leave', roomCode, (response) => {
             if (!response?.ok) {
-                alert(response.message)
+                notify(response.message);
+                socket.disconnect();
                 navigate('/lobby');
             }
             setRoom(response.room);
+            socket.disconnect();
             return navigate('/lobby');
         })
     }
