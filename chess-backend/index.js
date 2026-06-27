@@ -123,8 +123,7 @@ function getPublicClock(room) {
 
 
 //All rooms that are created will be stored in rooms map.
-let rooms = new Map();
-console.log(rooms, 'All Rooms');
+// let rooms = new Map();
 /*Structure -->
  roomCode:{
  roomCode,
