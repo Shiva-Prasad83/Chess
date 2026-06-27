@@ -2,12 +2,18 @@ import React, { useState } from 'react';
 import { connectSocket, socket } from '../socket';
 import { useNavigate, Link } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import { useEffect } from 'react';
+import { useSelector } from 'react-redux';
 function Lobby() {
     const [roomCode, setRoomCode] = useState("");
     const navigate = useNavigate();
     const notify = (message) => toast(message);
-    function createRoom() {
+    const { user } = useSelector((state) => state.authReducer);
+    useEffect(() => {
         connectSocket();
+        socket.emit('user:online', user._id);
+    }, [])
+    function createRoom() {
         //This callback function is passed as an argument to the backend.
         //Socket which is listening to room:create -> socket.on('room:create',(argument)=>{
         //this argument is called the callback function we are passing from frontend
@@ -34,8 +40,17 @@ function Lobby() {
             navigate(`/rooms/${roomCode}`);
         })
     }
+
+    function play() {
+        navigate('/online');
+    }
     return (
         <div className="w-full">
+
+            <div>
+                <button onClick={play}>Play</button>
+                <button>Play with friends</button>
+            </div>
             {/* Heading */}
             <div className="mb-10 text-center">
                 <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-indigo-700">

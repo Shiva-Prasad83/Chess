@@ -13,6 +13,7 @@ import Profile from './pages/Profile'
 import Room from './pages/Room'
 import Game from './pages/Game'
 import Leaderboard from './pages/Leaderboard'
+import PlayOnline from './pages/PlayOnline'
 function App() {
   const dispatch = useDispatch();
 
@@ -33,6 +34,7 @@ function App() {
       </Route>
       <Route path='/game/:roomCode' element={<Game />} />
       <Route path='/rooms/:roomCode' element={<Room />} />
+      <Route path='/online' element={<PlayOnline />} />
     </Routes>
   </BrowserRouter>
 }

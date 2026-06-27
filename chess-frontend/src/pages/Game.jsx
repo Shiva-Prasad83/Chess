@@ -142,7 +142,7 @@ function Game() {
     function leaveRoom() {
         socket.emit('room:leave', roomCode, (response) => {
             if (!response?.ok) {
-                alert(response.message)
+                notify(response.message);
                 // navigate('/lobby');
                 return;
             }
@@ -374,7 +374,7 @@ function Game() {
 
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center text-center px-4">
+                                <div className="flex flex-col items-center justify-center text-center px-4 gap-2">
                                     <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 text-white text-5xl sm:text-6xl grid place-items-center shadow-xl">
                                         👑
                                     </div>
@@ -391,6 +391,17 @@ function Game() {
                                     <div className="mt-6 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-blue-50 p-6 shadow-sm">
                                         <p className="text-slate-700 font-medium">{reason}</p>
                                     </div>
+
+                                    <div>
+                                        <button className="rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-4 sm:px-6 py-2 sm:py-3 font-semibold
+                                     text-white shadow-md hover:from-rose-600 cursor-pointer
+                                      hover:to-red-700 transition text-sm sm:text-base"
+                                            onClick={() => navigate('/lobby')}
+                                        >
+                                            Go to Lobby
+                                        </button>
+                                    </div>
+
                                 </div>
                             )}
                         </div>
@@ -465,6 +476,7 @@ function Game() {
                                  hover:from-indigo-600 hover:to-blue-700 
                                  transition text-sm py-2"
                                     type='submit'
+                                    disabled={result ? true : false}
                                 >
                                     Send
                                 </button>
