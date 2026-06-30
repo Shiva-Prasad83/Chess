@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const userSchema = mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true },
+    name: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true },
     passwordHash: { type: String, required: true },
     role: { type: String, default: "USER", enum: ["USER", "ADMIN"] },
     avatar: { type: String, default: "" },
@@ -19,6 +19,10 @@ const userSchema = mongoose.Schema({
     friends: [{
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
+    }],
+    friendRequests: [{
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+        accepted: { type: Boolean, default: false, required: true }
     }]
 }, {
     timestamps: true

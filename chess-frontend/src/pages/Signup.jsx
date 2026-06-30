@@ -6,7 +6,13 @@ import { ToastContainer, toast } from 'react-toastify';
 function Signup() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const notify = (message) => toast(message);
+    const notify = (message, type) => {
+        if (type === 'error') {
+            toast.error(message);
+        } else {
+            toast(message);
+        }
+    };
     const handleSignup = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -23,8 +29,12 @@ function Signup() {
             }, 1000);
 
         } catch (err) {
-            console.log('hello', err)
-            notify(err || "signup failed");
+            console.log('hello', err);
+            if (err.includes('E11000 duplicate key error collection')) {
+                notify('This name is already taken', 'error');
+            } else {
+                notify(err || "signup failed");
+            }
         }
 
     }

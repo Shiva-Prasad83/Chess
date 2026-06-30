@@ -14,6 +14,7 @@ const { leaderboardRouter } = require('./routes/leaderboard.router.js');
 const parser = require('./utilities/uploadProfile.js');
 const { timeStamp } = require('console');
 const Room = require('./models/rooms.model.js');
+const { verifyAuth } = require('./middlewares/verifyAuth.js');
 require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT;
@@ -26,12 +27,16 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 //uploading profile.
-app.post('/upload', parser.single('profile'), (req, res) => {
+app.post('/upload', verifyAuth, parser.single('profileImage'), async (req, res) => {
     try {
         const url = req.file.path;
+        const user = await User.findById(req.user._id);
+        user.avatar = url;
+        await user.save();
         return res.status(201).json({ profileImageUrl: url });
     } catch (err) {
-        return res.status(500).json({ message: "Internal Server Error" });
+        console.log(err);
+        return res.status(500).json({ message: err.message });
     }
 })
 app.use("/auth", authRouter);

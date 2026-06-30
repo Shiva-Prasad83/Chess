@@ -10,6 +10,7 @@ function PlayOnline() {
     const navigate = useNavigate();
     //const [roomCode, setRoomCode] = useState("");
     const notify = (message) => notify(message);
+
     if (!user) {
         navigate('/login');
         return;

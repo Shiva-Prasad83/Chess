@@ -9,7 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Lobby from './pages/Lobby';
 import { useDispatch } from 'react-redux'
 import { fetchMe } from './slices/authSlice'
-import Profile from './pages/Profile'
+import Profile from './components/Profile'
 import Room from './pages/Room'
 import Game from './pages/Game'
 import Leaderboard from './pages/Leaderboard'
@@ -28,7 +28,7 @@ function App() {
         <Route path='/signup' element={<Signup />} />
         <Route element={<ProtectedRoute />}>
           <Route path='/lobby' element={<Lobby />} />
-          <Route path='/profile' element={<Profile />} />
+          <Route path='/profile/:name' element={<Profile />} />
           <Route path='/leaderboard' element={<Leaderboard />} />
         </Route>
       </Route>

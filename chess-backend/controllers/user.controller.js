@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { Game } = require('../models/game.model');
 require('dotenv').config();
 const signup = async (req, res) => {
     try {
@@ -132,4 +133,38 @@ const refresh = async (req, res) => {
         return res.status(500).json({ message: err.message });
     }
 }
-module.exports = { signup, login, logout, fetchMe, refresh }
+
+const getUser = async (req, res) => {
+    try {
+        const { name } = req.params;
+        //console.log(name);
+        const user = await User.findOne({ name });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        return res.status(200).json(user);
+    } catch (err) {
+        return res.status(500).json({ message: err.message });
+    }
+}
+
+const recentMatches = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const matches = await Game.find({
+            $or: [
+                {
+                    whiteId: userId
+                },
+                {
+                    blackId: userId
+                }
+            ]
+        });
+        console.log(matches);
+        return res.sendStatus(200);
+    } catch (err) {
+        return res.status(500).json({ message: err.message });
+    }
+}
+module.exports = { signup, login, logout, fetchMe, refresh, getUser, recentMatches }

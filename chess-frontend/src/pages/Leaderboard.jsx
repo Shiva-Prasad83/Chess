@@ -14,7 +14,7 @@ function Leaderboard() {
         getLeaboard();
     }, [])
     return (
-        <div className="relative w-full overflow-hidden">
+        <div className="relative w-full overflow-hidden mt-[-30px]">
 
             {/* Background Chess Pieces */}
             <div className="pointer-events-none absolute inset-0 select-none overflow-hidden">
@@ -55,7 +55,7 @@ function Leaderboard() {
 
 
                 {/* Leaderboard Table */}
-                <div className="mt-6 overflow-x-auto rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-blue-50 shadow-lg">
+                <div className="mt-2 overflow-x-auto rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-blue-50 shadow-lg max-h-82">
 
                     <table className="min-w-full">
 
@@ -87,7 +87,7 @@ function Leaderboard() {
                                 </th>
 
                                 <th className="px-5 py-4 font-bold">
-                                    Max Streak
+                                    Winning Streak
                                 </th>
 
                             </tr>
