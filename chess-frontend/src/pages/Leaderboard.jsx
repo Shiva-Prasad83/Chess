@@ -2,6 +2,7 @@ import React from 'react'
 import api from '../api/client';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 function Leaderboard() {
     const [leaderboardPlayers, setLeaderboardPlayers] = useState([]);
     const { user } = useSelector((state) => state.authReducer);
@@ -10,6 +11,7 @@ function Leaderboard() {
         //console.log(data.data.players);
         setLeaderboardPlayers(data.data.players);
     }
+    const navigate = useNavigate();
     useEffect(() => {
         getLeaboard();
     }, [])
@@ -134,20 +136,24 @@ function Leaderboard() {
                                                     <div className={`
                                                 grid h-10 w-10 place-items-center 
                                                 rounded-full font-bold text-white
+                                                cursor-pointer
                                                 ${isMe
                                                             ? "bg-gradient-to-br from-amber-500 to-yellow-600"
                                                             : "bg-gradient-to-br from-indigo-500 to-blue-600"
                                                         }
-                                            `}>
+                                            `}
+                                                        onClick={() => navigate(`/profile/${player.name}`)}
+                                                    >
 
-                                                        {player.name?.[0]?.toUpperCase()}
-
+                                                        <img src={player.avatar ? player.avatar : null}
+                                                            className='w-full h-full object-cover rounded-full'
+                                                        />
                                                     </div>
 
 
                                                     <div>
 
-                                                        <p className="font-bold text-slate-900">
+                                                        <p className="font-bold text-slate-900 cursor-pointer hover:underline" onClick={() => navigate(`/profile/${player.name}`)}>
 
                                                             {
                                                                 isMe

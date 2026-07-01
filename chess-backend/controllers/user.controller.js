@@ -160,9 +160,12 @@ const recentMatches = async (req, res) => {
                     blackId: userId
                 }
             ]
-        });
-        console.log(matches);
-        return res.sendStatus(200);
+        }).populate("whiteId", "name").populate("blackId", "name");
+        ;
+
+        //console.log(matches);
+        matches.sort((a, b) => b.createdAt - a.createdAt);
+        return res.status(200).json({ matches });
     } catch (err) {
         return res.status(500).json({ message: err.message });
     }

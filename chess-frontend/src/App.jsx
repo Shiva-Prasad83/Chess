@@ -14,6 +14,7 @@ import Room from './pages/Room'
 import Game from './pages/Game'
 import Leaderboard from './pages/Leaderboard'
 import PlayOnline from './pages/PlayOnline'
+import Play_With_Friends from './pages/Play_With_Friends'
 function App() {
   const dispatch = useDispatch();
 
@@ -28,6 +29,7 @@ function App() {
         <Route path='/signup' element={<Signup />} />
         <Route element={<ProtectedRoute />}>
           <Route path='/lobby' element={<Lobby />} />
+          <Route path='/play_with_friends' element={<Play_With_Friends />} />
           <Route path='/profile/:name' element={<Profile />} />
           <Route path='/leaderboard' element={<Leaderboard />} />
         </Route>
@@ -39,4 +41,4 @@ function App() {
   </BrowserRouter>
 }
 
-export default App
+export default App;
