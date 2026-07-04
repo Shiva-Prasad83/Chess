@@ -23,7 +23,7 @@ function Layout() {
     return (
         <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 text-slate-900">
             {/* Header */}
-            <nav className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 shadow-lg shadow-indigo-900/20">
+            {/* <nav className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 shadow-lg shadow-indigo-900/20">
                 <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
                     <Link to="/" className="group flex items-center gap-3">
                         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/15 text-3xl text-white ring-1 ring-white/30 backdrop-blur transition group-hover:rotate-6 group-hover:bg-white/25">
@@ -54,6 +54,101 @@ function Layout() {
                                 <button onClick={handleLogout} className="rounded-lg bg-rose-500 px-4 py-2 font-bold text-white shadow-md shadow-rose-900/20 transition hover:bg-rose-600 hover:shadow-lg">⇥ Logout</button>
                             </>
                         )}
+                    </div>
+                </div>
+            </nav> */}
+
+            <nav className="sticky top-0 z-50 border-b border-fuchsia-500/20 bg-gradient-to-r from-[#1b102f] via-[#2d174d] to-[#431c5d] shadow-2xl shadow-fuchsia-900/30">
+                <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+
+                    {/* Logo */}
+                    <Link
+                        to="/"
+                        className="group flex items-center gap-4"
+                    >
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 via-yellow-400 to-orange-500 text-3xl shadow-xl shadow-amber-500/40 transition-all duration-300 group-hover:rotate-12 group-hover:scale-110">
+                            ♞
+                        </div>
+
+                        <div>
+                            <h1 className="text-3xl font-black tracking-wide text-white">
+                                Chess
+                                <span className="bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-400 bg-clip-text text-transparent">
+                                    Game
+                                </span>
+                            </h1>
+
+                            <p className="text-xs uppercase tracking-[0.35em] text-purple-200/80">
+                                Play • Think • Conquer
+                            </p>
+                        </div>
+                    </Link>
+
+                    {/* Navigation */}
+                    <div className="flex flex-wrap items-center gap-3">
+
+                        {!user ? (
+                            <>
+                                <Link
+                                    to="/"
+                                    className="rounded-xl px-4 py-2 font-semibold text-purple-100 transition-all duration-300 hover:bg-white/10 hover:text-white"
+                                >
+                                    Home
+                                </Link>
+
+                                <Link
+                                    to="/login"
+                                    className="rounded-xl px-4 py-2 font-semibold text-purple-100 transition-all duration-300 hover:bg-white/10 hover:text-white"
+                                >
+                                    Login
+                                </Link>
+
+                                <Link
+                                    to="/signup"
+                                    className="rounded-xl bg-gradient-to-r from-yellow-400 to-orange-500 px-6 py-2 font-bold text-slate-900 shadow-lg shadow-orange-500/40 transition-all duration-300 hover:scale-105 hover:shadow-orange-400/60"
+                                >
+                                    Sign Up
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/lobby"
+                                    className="rounded-xl px-4 py-2 font-semibold text-purple-100 transition-all duration-300 hover:bg-fuchsia-500/20 hover:text-pink-300"
+                                >
+                                    🎮 Lobby
+                                </Link>
+
+                                <Link
+                                    to="/friends"
+                                    className="rounded-xl px-4 py-2 font-semibold text-purple-100 transition-all duration-300 hover:bg-fuchsia-500/20 hover:text-pink-300"
+                                >
+                                    👥 Friends
+                                </Link>
+
+                                <a
+                                    href={`/profile/${user.name}`}
+                                    className="rounded-xl px-4 py-2 font-semibold text-purple-100 transition-all duration-300 hover:bg-indigo-500/20 hover:text-indigo-200"
+                                >
+                                    👤 Profile
+                                </a>
+
+                                <Link
+                                    to="/leaderboard"
+                                    className="rounded-xl px-4 py-2 font-semibold text-purple-100 transition-all duration-300 hover:bg-amber-500/20 hover:text-yellow-300"
+                                >
+                                    🏆 Leaderboard
+                                </Link>
+
+                                <button
+                                    onClick={handleLogout}
+                                    className="cursor-pointer rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-5 py-2 font-bold text-white shadow-lg shadow-red-900/40 transition-all duration-300 hover:scale-105"
+                                >
+                                    Logout
+                                </button>
+                            </>
+                        )}
+
                     </div>
                 </div>
             </nav>

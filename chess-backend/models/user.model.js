@@ -18,11 +18,12 @@ const userSchema = mongoose.Schema({
     isOnline: { type: Boolean, default: false },
     friends: [{
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-
+        name: { type: String, required: true }
     }],
     friendRequests: [{
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-        accepted: { type: Boolean, default: false, required: true }
+        name: { type: String, required: true },
+        accepted: { type: Boolean, default: false }
     }]
 }, {
     timestamps: true

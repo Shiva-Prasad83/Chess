@@ -131,6 +131,9 @@ function Game() {
         }
         socket.emit("game:move", roomCode, from, to, 'q', (response) => {
             if (!response.ok) {
+                if (response.message.includes("Invalid move")) {
+                    return notify("Invalid Move");
+                }
                 return notify(response.message)
             }
         })

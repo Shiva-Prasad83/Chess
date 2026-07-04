@@ -22,7 +22,7 @@ function Profile() {
 
     async function fetchUser() {
         try {
-            const res = await api.get(`/auth/getUser/${name}`);
+            const res = await api.get(`/user/getUser/${name}`);
             //console.log(res);
             setUser(res.data);
         } catch (err) {
@@ -33,7 +33,7 @@ function Profile() {
     async function fetchMatches() {
         setOpen(true);
         try {
-            const response = await api.get(`/auth/getMatches/${user._id}`);
+            const response = await api.get(`/user/getMatches/${user._id}`);
             //console.log(matches);
             setMatches(response.data.matches);
         } catch (err) {

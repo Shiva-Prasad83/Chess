@@ -43,7 +43,7 @@ function Lobby() {
                 {/* Play Online */}
                 <button
                     onClick={play}
-                    className="group relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl border border-indigo-400/30 bg-gradient-to-br from-indigo-700 via-indigo-600 to-blue-600 p-8 text-white shadow-xl shadow-indigo-900/25 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-900/40 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+                    className="cursor-pointer group relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl border border-indigo-400/30 bg-gradient-to-br from-indigo-700 via-indigo-600 to-blue-600 p-8 text-white shadow-xl shadow-indigo-900/25 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-900/40 focus:outline-none focus:ring-4 focus:ring-indigo-300"
                 >
                     <span className="pointer-events-none absolute -right-8 -top-8 text-[10rem] text-white/10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
                         ♞
@@ -63,7 +63,7 @@ function Lobby() {
                 {/* Play with Friends */}
                 <button
                     onClick={playWithFriends}
-                    className="group relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl border border-amber-400/40 bg-gradient-to-br from-amber-400 via-amber-400 to-orange-500 p-8 text-slate-900 shadow-xl shadow-amber-900/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-900/40 focus:outline-none focus:ring-4 focus:ring-amber-300"
+                    className="cursor-pointer group relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-3xl border border-amber-400/40 bg-gradient-to-br from-amber-400 via-amber-400 to-orange-500 p-8 text-slate-900 shadow-xl shadow-amber-900/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-900/40 focus:outline-none focus:ring-4 focus:ring-amber-300"
                 >
                     <span className="pointer-events-none absolute -right-8 -top-8 text-[10rem] text-white/15 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">
                         ♜

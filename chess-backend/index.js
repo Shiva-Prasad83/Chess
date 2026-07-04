@@ -1,5 +1,6 @@
 const express = require('express');
 const { authRouter } = require('./routes/auth.router.js');
+const { userRouter } = require('./routes/user.router.js')
 const { Chess } = require('chess.js');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -41,6 +42,7 @@ app.post('/upload', verifyAuth, parser.single('profileImage'), async (req, res) 
 })
 app.use("/auth", authRouter);
 app.use("/leaderboard", leaderboardRouter);
+app.use('/user', userRouter);
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -282,9 +284,14 @@ io.on('connection', (socket) => {
                 io.to(roomCode).emit('start:game', roomCode);
                 return ack?.({ ok: true, roomCode });
             }
+            //console.log(onlineUsers, "added user");
         } catch (err) {
             return ack?.({ ok: false, message: err.message });
         }
+    });
+    socket.on('leave:online', () => {
+        onlineUsers.delete(socket.user._id);
+        //console.log(onlineUsers, "after deleting");
     });
     socket.on("room:create", async (ack) => {
         /*

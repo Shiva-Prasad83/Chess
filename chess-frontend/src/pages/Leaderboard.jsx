@@ -89,7 +89,7 @@ function Leaderboard() {
                                 </th>
 
                                 <th className="px-5 py-4 font-bold">
-                                    Winning Streak
+                                    Max Winning Streak
                                 </th>
 
                             </tr>
