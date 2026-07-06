@@ -41,7 +41,7 @@ const recentMatches = async (req, res) => {
 const findUsers = async (req, res) => {
     try {
         const { name } = req.query;
-        console.log(name);
+        // console.log(name);
         if (name === req.user.name) {
             return res.status(400).json({ message: "Search For Friends" });
         }
@@ -71,7 +71,7 @@ const findUsers = async (req, res) => {
             }
         }
 
-        console.log(user);
+        //console.log(user);
 
         return res.status(200).json(user);
     } catch (err) {
@@ -84,26 +84,21 @@ const findUsers = async (req, res) => {
 const sendFriendRequest = async (req, res) => {
     try {
         const { friendId, name } = req.body;
-        console.log(friendId, 'sending friend request');
+        //console.log(friendId, 'sending friend request');
         const friend = await User.findById(friendId);
-        console.log(friend, "friend");
+        //console.log(friend, "friend");
         if (!friend) {
             return res.status(404).json({ message: "User not found" });
+        }
+        const yourFriendAlreadySentRequestToYou = req.user.friendRequests.some((fr) => fr.userId.toString() === friend._id.toString());
+        if (yourFriendAlreadySentRequestToYou) {
+            return res.status(200).json({ message: "He already sent you request!" });
         }
         friend.friendRequests.push({ userId: req.user._id, name: req.user.name });
         await friend.save();
         return res.status(201).json({ message: "Request Sent" });
     } catch (err) {
         return res.status(500).json({ message: err.message });
-    }
-}
-
-
-const getMyFriends = async (req, res) => {
-    try {
-
-    } catch (err) {
-        console.log(err);
     }
 }
 
@@ -139,7 +134,7 @@ const acceptFriendRequest = async (req, res) => {
             name: me.name
         })
         me.friendRequests = me.friendRequests.filter((fr) => fr.userId.toString() !== friend._id.toString());
-        console.log(me.friendRequests);
+        //console.log(me.friendRequests);
         await me.save();
         await friend.save();
         return res.status(200).json({ friendRequest: me.friendRequest, message: "Friend Added" });
@@ -162,4 +157,22 @@ const rejectFriendRequest = async (req, res) => {
         return res.status(500).json({ message: err.message });
     }
 }
-module.exports = { getUser, recentMatches, findUsers, sendFriendRequest, getMyFriends, getFriendRequests, acceptFriendRequest, rejectFriendRequest };
+
+const getFriends = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        let friends = await Promise.all(
+            user.friends.map(async (fr) => {
+                const friend = await User.findById(fr.userId);
+                // console.log(friend, "friend");
+                return { isOnline: friend.isOnline, socketId: friend.socketId, name: friend.name, userId: friend._id };
+            })
+        );
+        friends = friends.sort((a, b) => b.isOnline - a.isOnline);
+        // console.log(friends);
+        return res.status(200).json({ friends });
+    } catch (err) {
+        return res.status(500).json({ message: err.message })
+    }
+}
+module.exports = { getUser, recentMatches, findUsers, sendFriendRequest, getFriendRequests, acceptFriendRequest, rejectFriendRequest, getFriends };

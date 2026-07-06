@@ -55,7 +55,6 @@ function Login() {
         shadow-2xl shadow-indigo-300/30
     ">
 
-                {/* Chess Background */}
                 <div className="absolute inset-0 pointer-events-none">
 
                     <span className="absolute -left-4 top-4 text-8xl text-indigo-200/50 animate-float">

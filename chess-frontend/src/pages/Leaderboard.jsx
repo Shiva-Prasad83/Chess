@@ -3,6 +3,8 @@ import api from '../api/client';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { connectSocket, socket } from '../socket';
+import LoadingPage from '../components/LoadingPage';
 function Leaderboard() {
     const [leaderboardPlayers, setLeaderboardPlayers] = useState([]);
     const { user } = useSelector((state) => state.authReducer);
@@ -15,10 +17,16 @@ function Leaderboard() {
     useEffect(() => {
         getLeaboard();
     }, [])
+    useEffect(() => {
+        connectSocket();
+        socket.emit('user:online', user._id);
+    });
+    if (!leaderboardPlayers.length) {
+        return <LoadingPage />
+    }
     return (
         <div className="relative w-full overflow-hidden mt-[-30px]">
 
-            {/* Background Chess Pieces */}
             <div className="pointer-events-none absolute inset-0 select-none overflow-hidden">
 
                 <span className="absolute -left-6 top-5 text-[10rem] text-indigo-200/40 animate-float">
@@ -38,7 +46,6 @@ function Leaderboard() {
 
             <div className="relative z-10">
 
-                {/* Header */}
                 <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 p-8 text-center text-white shadow-xl shadow-indigo-400/30">
 
                     <div className="text-6xl animate-float">
@@ -54,9 +61,6 @@ function Leaderboard() {
                     </p>
 
                 </div>
-
-
-                {/* Leaderboard Table */}
                 <div className="mt-2 overflow-x-auto rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/80 via-white to-blue-50 shadow-lg max-h-82">
 
                     <table className="min-w-full">

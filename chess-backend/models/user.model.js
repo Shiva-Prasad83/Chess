@@ -15,6 +15,7 @@ const userSchema = mongoose.Schema({
         currentWinningStreak: { type: Number, default: 0 },
         maxWinningStreak: { type: Number, default: 0 }
     },
+    socketId: { type: String, default: "" },
     isOnline: { type: Boolean, default: false },
     friends: [{
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

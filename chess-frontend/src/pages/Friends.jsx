@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux';
 import api from '../api/client';
 import { ToastContainer, toast } from 'react-toastify';
+import { connectSocket, socket } from '../socket';
 // function debounce(callback, delay) {
 //     let timer;
 
@@ -24,19 +25,9 @@ function Friends() {
     const [searchedFriendsList, setSearchedFriendsList] = useState();
     const notify = (message) => toast(message);
     const [buttonText, setButtonText] = useState('Add Friend');
-
+    const [refresh, setRefresh] = useState(false);
     const [myFriendRequests, setMyFriendRequests] = useState([]);
-    // async function getMyFriends() {
-    //     try {
-
-    //     } catch (err) {
-    //         console.log(err);
-    //     }
-    // }
-    // useEffect(() => {
-    //     getMyFriends();
-    // }, [])
-
+    const { user } = useSelector((state) => state.authReducer);
     //trying query params
     async function getFriendRequests() {
         try {
@@ -46,10 +37,22 @@ function Friends() {
             console.log(err);
         }
     }
+    async function getAllFriends() {
+        try {
+            const res = await api.get('/user/friends');
+            setMyFriends(res.data.friends);
+            console.log(res.data.friends, "friends");
+        } catch (err) {
+            console.log(err);
+        }
+    }
 
     useEffect(() => {
+        connectSocket();
+        socket.emit('user:online', user._id);
         getFriendRequests();
-    }, [])
+        getAllFriends();
+    }, [refresh]);
     async function findUser(e) {
         e.preventDefault();
         try {
@@ -105,106 +108,300 @@ function Friends() {
         }
     }
     return (
-        <div>
-            <div className='flex gap-8'>
+        <div className="space-y-8">
+            <div className="text-center">
+                <h1 className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-pink-500 bg-clip-text text-transparent">
+                    Friends
+                </h1>
+
+                <p className="mt-2 text-slate-500">
+                    Manage your friends, requests and invite players.
+                </p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-4">
+
                 <button
-                    className='bg-blue-500 p-2 rounded-xl cursor-pointer text-white'
                     onClick={() => {
+                        getAllFriends();
                         setShowFriends(true);
                         setShowAddFriend(false);
                         setShowFriendRequests(false);
-                    }}>My Friends</button>
+                    }}
+                    className={`cursor-pointer rounded-xl px-6 py-3 font-semibold transition-all duration-300
+            ${showFriends
+                            ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl"
+                            : "bg-white hover:bg-indigo-50 border border-indigo-100"
+                        }`}
+                >
+                    👥 My Friends
+                </button>
+
                 <button
-                    className='bg-blue-500 p-2 rounded-xl cursor-pointer text-white'
                     onClick={() => {
                         setShowAddFriend(true);
                         setShowFriends(false);
                         setShowFriendRequests(false);
                     }}
+                    className={`cursor-pointer rounded-xl px-6 py-3 font-semibold transition-all duration-300
+            ${showAddFriend
+                            ? "bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-xl"
+                            : "bg-white hover:bg-pink-50 border border-pink-100"
+                        }`}
+                >
+                    ➕ Add Friend
+                </button>
 
-                >Add Friends</button>
-                <div className='relative'>
-                    <button
-                        className='bg-blue-500 p-2 rounded-xl cursor-pointer text-white'
-                        onClick={() => {
-                            getFriendRequests();
-                            setShowFriendRequests(true);
-                            setShowAddFriend(false);
-                            setShowFriends(false);
-                        }}>Friend Requests</button>
-                    <h1 className='absolute h-6 w-4 text-center text-white font-bold rounded-full bg-red-500 -top-5 right-0'>{myFriendRequests.length}</h1>
-                </div>
+                <button
+                    onClick={() => {
+                        getFriendRequests();
+                        setShowFriendRequests(true);
+                        setShowAddFriend(false);
+                        setShowFriends(false);
+                    }}
+                    className={`cursor-pointer relative rounded-xl px-6 py-3 font-semibold transition-all duration-300
+            ${showFriendRequests
+                            ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xl"
+                            : "bg-white hover:bg-amber-50 border border-amber-100"
+                        }`}
+                >
+                    📩 Friend Requests
+
+                    {myFriendRequests?.length > 0 && (
+                        <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white shadow-lg">
+                            {myFriendRequests.length}
+                        </span>
+                    )}
+                </button>
+
             </div>
-            <div>
 
-                {showFriends && <div>
-                    {
+            {showFriends && (
 
-                    }
-                </div>}
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
-                {showAddFriend && <div>
-                    Add Friend
-                    <form onSubmit={findUser}>
-                        <input type="text" placeholder='Search Friend by Username'
-                            onChange={(e) => setSearchedFriend(e.target.value)}
+                    {myFriends.length ? (
+                        myFriends.map((friend) => (
+
+                            <div
+                                key={friend.userId}
+                                className="rounded-3xl border border-white/60 bg-white/70 p-6 shadow-xl backdrop-blur transition hover:-translate-y-1 hover:shadow-2xl"
+                            >
+
+                                <div className="flex items-center justify-between">
+
+                                    <div>
+
+                                        <h2 className="text-xl font-bold text-slate-800">
+                                            {friend.name}
+                                        </h2>
+
+                                        <div className="mt-2">
+
+                                            {friend.isOnline ? (
+                                                <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
+                                                    🟢 Online
+                                                </span>
+                                            ) : (
+                                                <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-500">
+                                                    ⚪ Offline
+                                                </span>
+                                            )}
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                {friend.isOnline && (
+
+                                    <button
+                                        className="cursor-pointer mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 py-3 font-semibold text-white transition hover:scale-105"
+                                    >
+                                        🎮 Invite to Game
+                                    </button>
+
+                                )}
+
+                            </div>
+
+                        ))
+                    ) : (
+
+                        <div className="col-span-full rounded-3xl bg-white/70 p-10 text-center shadow-lg">
+
+                            <h2 className="text-xl font-bold text-slate-700">
+                                No Friends Yet
+                            </h2>
+
+                            <p className="mt-2 text-slate-500">
+                                Search and add your friends to play together.
+                            </p>
+
+                        </div>
+
+                    )}
+
+                </div>
+
+            )}
+
+            {showAddFriend && (
+
+                <div className="rounded-3xl border border-white/60 bg-white/70 p-8 shadow-xl backdrop-blur">
+
+                    <h2 className="mb-6 text-2xl font-bold">
+                        Search Friend
+                    </h2>
+
+                    <form
+                        onSubmit={findUser}
+                        className="flex flex-col gap-4 sm:flex-row"
+                    >
+
+                        <input
+                            type="text"
+                            placeholder="Search by username..."
                             value={searchedFriend}
+                            onChange={(e) => setSearchedFriend(e.target.value)}
+                            className="flex-1 rounded-xl border border-slate-300 px-5 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300"
                         />
-                        <button type='submit'>Search</button>
+
+                        <button
+                            type="submit"
+                            className="cursor-pointer rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 px-8 py-3 font-semibold text-white transition hover:scale-105"
+                        >
+                            Search
+                        </button>
+
                     </form>
 
-                    {
-                        searchedFriendsList ? <div>
+                    {searchedFriendsList && (
 
-                            <div className='flex gap-4'>
-                                <p>{searchedFriendsList.name}</p>
-                                {!searchedFriendsList.already ? <button className='bg-blue-400 p-2 text-white rounded-2xl cursor-pointer'
-                                    onClick={() => sendFriendRequest(searchedFriendsList._id, searchedFriendsList.name)}
-                                    disabled={buttonText === "Request sent" ? true : false}
-                                >{buttonText}</button> : <button className='bg-blue-400 p-2 text-white rounded-2xl cursor-pointer'
-                                >{searchedFriendsList.message}</button>}
+                        <div className="mt-8 rounded-2xl border border-indigo-100 bg-indigo-50 p-6">
+
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                                <h2 className="text-xl font-bold">
+                                    {searchedFriendsList.name}
+                                </h2>
+
+                                {!searchedFriendsList.already ? (
+
+                                    <button
+                                        onClick={() =>
+                                            sendFriendRequest(
+                                                searchedFriendsList._id,
+                                                searchedFriendsList.name
+                                            )
+                                        }
+                                        disabled={buttonText === "Request sent"}
+                                        className="cursor-pointer rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-3 font-semibold text-white transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {buttonText}
+                                    </button>
+
+                                ) : (
+
+                                    <button
+                                        className="cursor-pointer rounded-xl bg-gray-300 px-6 py-3 font-semibold text-gray-700"
+                                    >
+                                        {searchedFriendsList.message}
+                                    </button>
+
+                                )}
+
                             </div>
-                        </div> : ""
-                    }
-                </div>}
 
-                {
-                    showFriendRequests && <div>
+                        </div>
 
-                        {
-                            myFriendRequests?.length ? <div>
-                                {
-                                    myFriendRequests?.map((fr) => {
-                                        return (
-                                            <div key={fr._id} className='flex gap-4'>
-                                                <p>{fr.name}</p>
-                                                <button
-                                                    className='cursor-pointer'
-                                                    onClick={() => {
-                                                        acceptFriendRequest(fr.userId);
-                                                    }}>Accept</button>
-                                                <button
-                                                    className='cursor-pointer'
-                                                    onClick={() => {
-                                                        rejectFriendRequest(fr.userId)
-                                                    }}>Reject</button>
-                                            </div>
-                                        )
-                                    })
-                                }
-                            </div> :
+                    )}
+
+                </div>
+
+            )}
+
+            {showFriendRequests && (
+
+                <div className="space-y-5">
+
+                    {myFriendRequests?.length ? (
+
+                        myFriendRequests?.map((fr) => (
+
+                            <div
+                                key={fr._id}
+                                className="flex flex-col items-start justify-between gap-5 rounded-3xl border border-white/60 bg-white/70 p-6 shadow-xl backdrop-blur sm:flex-row sm:items-center"
+                            >
 
                                 <div>
-                                    No Friend Requests
+
+                                    <h2 className="text-xl font-bold text-slate-800">
+                                        {fr.name}
+                                    </h2>
+
+                                    <p className="text-slate-500">
+                                        wants to become your friend.
+                                    </p>
+
                                 </div>
-                        }
 
-                    </div>
-                }
+                                <div className="flex gap-3">
 
-                <button className='bg-green-500 text-white p-2 rounded-xl cursor-pointer'>Refresh</button>
+                                    <button
+                                        onClick={() => acceptFriendRequest(fr.userId)}
+                                        className="cursor-pointer rounded-xl bg-green-500 px-5 py-2 font-semibold text-white transition hover:scale-105"
+                                    >
+                                        Accept
+                                    </button>
+
+                                    <button
+                                        onClick={() => rejectFriendRequest(fr.userId)}
+                                        className="cursor-pointer rounded-xl bg-red-500 px-5 py-2 font-semibold text-white transition hover:scale-105"
+                                    >
+                                        Reject
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        ))
+
+                    ) : (
+
+                        <div className="rounded-3xl bg-white/70 p-10 text-center shadow-lg">
+
+                            <h2 className="text-2xl font-bold text-slate-700">
+                                📭 No Friend Requests
+                            </h2>
+
+                            <p className="mt-2 text-slate-500">
+                                You're all caught up.
+                            </p>
+
+                        </div>
+
+                    )}
+
+                </div>
+
+            )}
+
+            <div className="flex justify-center">
+
+                <button
+                    className="cursor-pointer rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-3 font-semibold text-white shadow-lg transition hover:scale-105"
+                    onClick={() => setRefresh(!refresh)}
+                >
+                    🔄 Refresh
+                </button>
+
             </div>
+
             <ToastContainer />
+
         </div>
     )
 }

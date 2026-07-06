@@ -4,7 +4,6 @@ import { useNavigate, useParams, Link, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
-import SideBar from '../components/SideBar';
 function Room() {
     const [room, setRoom] = useState(null);
     // const [roomCreator, setRoomCreator] = useState(false);
@@ -20,7 +19,9 @@ function Room() {
     //console.log(user);
     useEffect(() => {
         navigate(`/rooms/${roomCode}`)
-    }, [room])
+        // connectSocket();
+        // socket.emit('user:online', user?._id);
+    }, [room]);
 
     useEffect(() => {
         connectSocket();
@@ -63,11 +64,11 @@ function Room() {
         socket.emit('room:leave', roomCode, (response) => {
             if (!response?.ok) {
                 notify(response.message);
-                socket.disconnect();
+                socket.off();
                 navigate('/lobby');
             }
             setRoom(response.room);
-            socket.disconnect();
+            socket.off();
             return navigate('/lobby');
         })
     }
@@ -308,38 +309,6 @@ function Room() {
 
             <ToastContainer />
         </div>
-
-        // <div>
-        //     <h1 className='text-2xl font-bold'>roomCode:{roomCode}</h1>
-        //     <h1 className='text-2xl font-bold'>Status:{room?.status}</h1>
-        //     <ul>
-        //         {
-        //             // room?.players?.map((player) => {
-        //             //     if (player.userId.toString() === user._id.toString()) {
-        //             //         return <li>{player.name} (Me)</li>
-        //             //     }
-        //             //     return <li>{player.name} (Opponent)</li>
-        //             // })
-        //             room?.players.map((player, index) => {
-        //                 return <li key={player.socketId}>{
-        //                     player.userId.toString() === user._id.toString() ? player.name + " (Me)" : player.name
-        //                 }</li>
-        //             })
-        //         }
-        //     </ul>
-        //     {/* room?.status === "ready" && <button className='bg-green-400 p-4 rounded-lg cursor-pointer'>Start Game</button> */}
-
-        //     <div className='flex gap-4'>
-        //         {
-        //             roomCreator && <button className='bg-green-400 p-4 rounded-lg cursor-pointer'
-        //                 onClick={startGame}
-        //             >{room?.status === "ready" ? "Start Game" : "Waiting for Opponent"}</button>
-        //         }
-        //         <button className='bg-red-400 p-4 rounded-lg cursor-pointer' onClick={leaveRoom}>Leave Room</button>
-        //     </div>
-
-        //     <ToastContainer />
-        // </div>
     )
 }
 

@@ -17,6 +17,7 @@ function Game() {
     const [messages, setMessages] = useState([]);
     const { roomCode } = useParams();
     const messagesEndRef = useRef();
+    const [displayDraw, setDisplayDraw] = useState(false);
     const notify = (message) => toast(message);
     const navigate = useNavigate();
 
@@ -30,6 +31,7 @@ function Game() {
 
             setMessages(response.messages);
         })
+
     }, [refresh]);
 
     useEffect(() => {
@@ -40,6 +42,7 @@ function Game() {
 
     useEffect(() => {
         connectSocket();
+        socket.emit('user:online', user?._id);
         socket.emit('room:join', roomCode, (response) => {
             if (!response.ok) {
                 return notify(response.message);
@@ -58,7 +61,10 @@ function Game() {
         }
         socket.on('game:update', gameUpdate);
 
-        function gameOver({ result, reason }) {
+        function gameOver({ result, reason, message }) {
+            if (message) {
+                notify(message);
+            }
             setResult(result);
             setReason(reason);
         }
@@ -94,6 +100,18 @@ function Game() {
             setWhiteMs(response?.clock.whiteMs);
             setBlackMs(response?.clock.blackMs);
         })
+        function offeredDraw() {
+            setDisplayDraw(true);
+            setTimeout(() => {
+                setDisplayDraw(false);
+            }, 10000);
+        }
+        socket.on('offered:draw', offeredDraw);
+        function drawRejected(message) {
+            //console.log(message);
+            notify(message);
+        }
+        socket.on('rejected:draw', drawRejected);
         return () => {
             socket.off('room:presence', roomPresence);
             socket.off('game:update', gameUpdate);
@@ -101,9 +119,10 @@ function Game() {
             socket.off('clock:update', onClock);
             socket.off('time:out', timeOut);
             socket.off('new:message', newMessage);
+            socket.off('offered:draw', offeredDraw);
+            socket.off('rejected:draw', drawRejected);
         }
     }, []);
-
 
     if (!authChecked) {
         return <div>Loading .....!</div>
@@ -179,6 +198,32 @@ function Game() {
                 return;
             }
         })
+    }
+    function requestDraw() {
+        socket.emit('request:draw', roomCode, opponentPlayer.socketId, (response) => {
+            if (!response.ok) {
+                return notify(response.message);
+            }
+            //notify(response.message);
+        })
+    }
+    function acceptDraw() {
+        socket.emit('accept:draw', roomCode, opponentPlayer.socketId, (response) => {
+            if (!response.ok) {
+                return notify(response.message);
+            }
+            notify(response.message);
+        });
+        setDisplayDraw(false);
+    }
+    function rejectDraw() {
+        socket.emit('reject:draw', roomCode, opponentPlayer.socketId, (response) => {
+            if (!response.ok) {
+                return notify(response.message);
+            }
+            notify(response.message);
+        });
+        setDisplayDraw(false);
     }
     return (
         <div className="min-h-screen w-screen overflow-x-hidden bg-gradient-to-b from-slate-50 via-white to-indigo-50/40 p-1">
@@ -274,19 +319,33 @@ function Game() {
                     </div>
 
                     <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-3 flex justify-center gap-3 flex-wrap">
-                        <button className="rounded-xl bg-gradient-to-r from-rose-500
+                        <button className="rounded-xl bg-gradient-to-r from-rose-500 cursor-pointer
                          to-red-600 px-4 py-2 font-semibold text-white shadow-md hover:from-rose-600
-                         hover:to-red-700 transition text-sm"
+                         hover:to-red-700 transition text-sm
+                         disabled:cursor-not-allowed
+                         disabled:opacity-50
+                       disabled:hover:from-rose-500
+                       disabled:hover:to-red-600
+                         "
                             onClick={resign}
+                            disabled={result ? true : false}
                         >
                             🚩 Resign
                         </button>
-                        <button className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 font-semibold text-white shadow-md hover:from-amber-600 hover:to-orange-600 transition text-sm">
+                        <button onClick={requestDraw}
+                            className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2
+                         font-semibold text-white shadow-md hover:from-amber-600 cursor-pointer
+                          hover:to-orange-600 transition text-sm
+                          disabled:cursor-not-allowed
+                          disabled:opacity-50
+                        disabled:hover:from-rose-500
+                        disabled:hover:to-red-600
+                          "
+                            disabled={result ? true : false}
+                        >
                             🤝 Draw
                         </button>
-                        <button className="rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 px-4 py-2 font-semibold text-white shadow-md hover:from-indigo-600 hover:to-blue-700 transition text-sm">
-                            🔄 Flip
-                        </button>
+
                     </div>
                 </div>
 
@@ -344,7 +403,40 @@ function Game() {
                                             />}
                                         </div>
                                     </div>
+                                    {displayDraw ?
+                                        //  <div className='flex gap-8 items-center'>
+                                        //     <h1>Draw</h1>
+                                        //     <button onClick={acceptDraw} className='bg-green-500 p-2 rounded-full cursor-pointer'>accept</button>
+                                        //     <button onClick={rejectDraw} className='bg-red-500 p-2 rounded-full cursor-pointer'>reject</button>
+                                        // </div> 
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-lg">
+                                            <div>
+                                                <h2 className="text-lg font-semibold text-white">
+                                                    Draw Offer
+                                                </h2>
+                                                <p className="text-sm text-slate-400">
+                                                    Your opponent has offered a draw.
+                                                </p>
+                                            </div>
 
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={acceptDraw}
+                                                    className="cursor-pointer px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition-all duration-200 active:scale-95"
+                                                >
+                                                    ✓ Accept
+                                                </button>
+
+                                                <button
+                                                    onClick={rejectDraw}
+                                                    className="cursor-pointer px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-all duration-200 active:scale-95"
+                                                >
+                                                    ✕ Reject
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        : ""}
                                     <div className="w-full flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-indigo-500 text-white grid place-items-center font-bold text-sm">
@@ -477,7 +569,12 @@ function Game() {
                                 />
                                 <button className="rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 px-5 text-white font-semibold shadow-md
                                  hover:from-indigo-600 hover:to-blue-700 
-                                 transition text-sm py-2"
+                                 transition text-sm py-2
+                                 disabled:cursor-not-allowed
+                                 disabled:opacity-50
+                                 disabled:hover:from-rose-500
+                                 disabled:hover:to-red-600
+                                 "
                                     type='submit'
                                     disabled={result ? true : false}
                                 >

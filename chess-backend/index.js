@@ -150,7 +150,7 @@ function getPublicClock(room) {
  newRoom.clock={
  whiteMs:baseMs,
  blackMs:baseMs,
- active:"w",
+ active:"w", 
  running:false,
  lastSwitch:null
  }
@@ -220,6 +220,7 @@ io.on('connection', (socket) => {
         try {
             const user = await User.findById(userId);
             user.isOnline = true;
+            user.socketId = socket.id;
             await user.save();
             //await User.findByIdAndUpdate(userId, { isOnline: true });
             //console.log(user, "after login");
@@ -398,7 +399,7 @@ io.on('connection', (socket) => {
             //const existingRoom = rooms.get(roomCode);
             // console.log(existingRoom, "Trying to join the room");
             if (!existingRoomFromDB) {
-                console.log(existingRoomFromDB, 'error while joining the room');
+                //console.log(existingRoomFromDB, 'error while joining the room');
                 return ack({ ok: false, message: 'Room Not Found' });
             }
             //Case Step 2:
@@ -410,7 +411,7 @@ io.on('connection', (socket) => {
                 //console.log('user not exists')
                 //console.log(existingRoom, "Checking players.length");
                 if (existingRoomFromDB.players.length === 2) {
-                    console.log('Room is full');
+                    //console.log('Room is full');
                     return ack({ ok: false, message: "Room is full" })
                 }
                 // existingRoom.players.push({
@@ -427,7 +428,7 @@ io.on('connection', (socket) => {
             } else {
                 //If the user already in the room, but disconnected and tried to connect with new
                 //socketId with same roomCode.
-                console.log('User already exits');
+                //console.log('User already exits');
                 // existingRoom.players = existingRoom.players.map((player) => {
                 //     if (player.userId.toString() === socket.user._id.toString()) {
                 //         return { ...player, socketId: socket.id };
@@ -571,7 +572,7 @@ io.on('connection', (socket) => {
     //Frontend emits these events
     socket.on("game:state", async (roomCode, ack) => {
         try {
-            console.log('Game state on every refresh');
+            // console.log('Game state on every refresh');
             //let room = rooms.get(roomCode);
             const room = await Room.findOne({ roomCode });
             if (!room) {
@@ -764,7 +765,7 @@ io.on('connection', (socket) => {
             if (room.chat.length === 50) {
                 room.chat.shift();
             }
-            console.log('Message came and sending to the frontend');
+            //console.log('Message came and sending to the frontend');
             await room.save();
             io.to(roomCode).emit('new:message', message);
             return ack?.({ ok: true, message });
@@ -819,19 +820,100 @@ io.on('connection', (socket) => {
         } catch (err) {
             return ack?.({ ok: false, message: err.message });
         }
+    });
+
+    socket.on('request:draw', async (roomCode, opponentSocketId, ack) => {
+        try {
+            const room = await Room.findOne({ roomCode });
+            if (!room) {
+                return ack?.({ ok: false, message: "Invalid Room Code" });
+            }
+            const isPresent = room.players.some((p) => p.userId.toString() === socket.user._id.toString());
+            const isOpponentPresent = room.players.some((p) => p.socketId === opponentSocketId);
+            if (!isPresent) {
+                return ack?.({ ok: false, message: "Invalid Player" });
+            }
+            if (!isOpponentPresent) {
+                return ack?.({ ok: false, message: "Invalid Opponent socketId" });
+            }
+            io.to(opponentSocketId).emit('offered:draw');
+            return ack?.({ ok: true, message: "Offered Draw to Opponent" });
+        } catch (err) {
+            return ack?.({ ok: false, message: err.message });
+        }
     })
 
-    socket.on('disconnect', async () => {
+    socket.on('accept:draw', async (roomCode, opponentSocketId, ack) => {
         try {
-            const user = await User.findById(socket.user._id);
-            user.isOnline = false;
-            await user.save();
-            //console.log(user, "user after log out");
-            // await User.findById(socket.user._id, { isOnline: false });
+            const room = await Room.findOne({ roomCode });
+            if (!room) {
+                return ack?.({ ok: false, message: "Invalid Room Code" });
+            }
+            const isPlayer = room.players.some((p) => p.userId.toString() === socket.user._id.toString());
+            if (!isPlayer) {
+                return ack?.({ ok: false, message: "Invalid Player" });
+            }
+            const isOpponentPresent = room.players.some((p) => p.socketId === opponentSocketId);
+            if (!isOpponentPresent) {
+                return ack?.({ ok: false, message: "Invalid Opponent socketId" });
+            }
+            const result = "draw";
+            const reason = "draw";
+            const game = new Game({
+                roomCode,
+                whiteId: room.whiteId,
+                blackId: room.blackId,
+                result,
+                reason,
+                startedAt: new Date(room.createdAt),
+                endedAt: Date.now(),
+                duration: Date.now() - room.createdAt
+            });
+            await game.save();
+            await updateUsersWithGameDetails(room, result, reason);
+            await Room.deleteOne(room);
+            io.to(roomCode).emit('game:over', { result, reason, message: "Draw Accepted" });
+        } catch (err) {
+            return ack?.({ ok: false, message: err.message });
+        }
+    });
+
+    socket.on('reject:draw', async (roomCode, opponentSocketId, ack) => {
+        try {
+            const room = await Room.findOne({ roomCode });
+            if (!room) {
+                return ack?.({ ok: false, message: "Invalid Room Code" });
+            }
+            const isPlayer = room.players.some((p) => p.userId.toString() === socket.user._id.toString());
+            if (!isPlayer) {
+                return ack?.({ ok: false, message: "Invalid Player" });
+            }
+            const isOpponentPresent = room.players.some((p) => p.socketId === opponentSocketId);
+            if (!isOpponentPresent) {
+                return ack?.({ ok: false, message: "Invalid Opponent socketId" });
+            }
+            io.to(opponentSocketId).emit('rejected:draw', "Draw Rejected");
+            return;
+        } catch (err) {
+            return ack?.({ ok: false, message: err.message });
+        }
+    })
+
+
+    socket.on("disconnect", async () => {
+        console.log("Triggered");
+
+        try {
+            if (!socket.user?._id) return;
+
+            await User.findByIdAndUpdate(socket.user._id, {
+                isOnline: false,
+                socketId: null,
+            });
         } catch (err) {
             console.log(err);
         }
-    })
+    });
 })
 
 server.listen(PORT, () => {
