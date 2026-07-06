@@ -491,7 +491,10 @@ function Game() {
                                         <button className="rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-4 sm:px-6 py-2 sm:py-3 font-semibold
                                      text-white shadow-md hover:from-rose-600 cursor-pointer
                                       hover:to-red-700 transition text-sm sm:text-base"
-                                            onClick={() => navigate('/lobby')}
+                                            onClick={() => {
+                                                navigate('/lobby')
+                                                leaveRoom()
+                                            }}
                                         >
                                             Go to Lobby
                                         </button>

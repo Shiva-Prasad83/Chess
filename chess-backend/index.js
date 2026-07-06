@@ -671,7 +671,7 @@ io.on('connection', (socket) => {
                 });
                 await updateUsersWithGameDetails(room, result, reason);
                 await playingGame.save();
-                await Room.deleteOne(room);
+                //await Room.deleteOne(room);
                 //Just updating the players stats.
                 //emitting the game:over event.
                 return;
@@ -730,7 +730,7 @@ io.on('connection', (socket) => {
                 })
                 await playingGame.save();
                 await updateUsersWithGameDetails(room, result, reason);
-                await Room.deleteOne(room);
+                //await Room.deleteOne(room);
                 io.to(roomCode).emit("game:over", { result, reason });
             }
         } catch (err) {
@@ -815,7 +815,7 @@ io.on('connection', (socket) => {
             });
             await game.save();
             await updateUsersWithGameDetails(room, result, reason);
-            await Room.deleteOne(room);
+            //await Room.deleteOne(room);
             io.to(roomCode).emit('game:over', { result, reason });
         } catch (err) {
             return ack?.({ ok: false, message: err.message });
@@ -871,7 +871,7 @@ io.on('connection', (socket) => {
             });
             await game.save();
             await updateUsersWithGameDetails(room, result, reason);
-            await Room.deleteOne(room);
+            //await Room.deleteOne(room);
             io.to(roomCode).emit('game:over', { result, reason, message: "Draw Accepted" });
         } catch (err) {
             return ack?.({ ok: false, message: err.message });
