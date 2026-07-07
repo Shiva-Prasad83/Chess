@@ -22,7 +22,7 @@ function Leaderboard() {
         socket.emit('user:online', user._id);
     });
     if (!leaderboardPlayers.length) {
-        return <LoadingPage />
+        return <LoadingPage heading={'Loading Learboard'} para={' Please wait. Thank you for your patience!'} />
     }
     return (
         <div className="relative w-full overflow-hidden mt-[-30px]">

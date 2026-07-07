@@ -165,14 +165,38 @@ const getFriends = async (req, res) => {
             user.friends.map(async (fr) => {
                 const friend = await User.findById(fr.userId);
                 // console.log(friend, "friend");
-                return { isOnline: friend.isOnline, socketId: friend.socketId, name: friend.name, userId: friend._id };
+                return { isOnline: friend.isOnline, socketId: friend.socketId, name: friend.name, userId: friend._id, status: friend.status };
             })
         );
-        friends = friends.sort((a, b) => b.isOnline - a.isOnline);
+        // friends = friends.sort((a, b) => b.isOnline - a.isOnline);
+        friends.sort((a, b) => {
+            const getPriority = (friend) => {
+                if (friend.isOnline && friend.status === "idle") return 4;
+                if (friend.isOnline && friend.status === "In Room") return 3;
+                if (friend.isOnline && friend.status === "In Game") return 2;
+                if (friend.isOnline) return 1;
+                return 0;
+            };
+
+            return getPriority(b) - getPriority(a);
+        });
         // console.log(friends);
         return res.status(200).json({ friends });
     } catch (err) {
         return res.status(500).json({ message: err.message })
     }
 }
-module.exports = { getUser, recentMatches, findUsers, sendFriendRequest, getFriendRequests, acceptFriendRequest, rejectFriendRequest, getFriends };
+
+const changeStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        //console.log(status);
+        await User.findByIdAndUpdate(req.user._id, {
+            status
+        });
+        return res.status(200).json({ message: `User Status Changed to ${status}` });
+    } catch (err) {
+        return res.status(500).json({ message: err.message });
+    }
+}
+module.exports = { getUser, recentMatches, findUsers, sendFriendRequest, getFriendRequests, acceptFriendRequest, rejectFriendRequest, getFriends, changeStatus };

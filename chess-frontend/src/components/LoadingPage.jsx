@@ -1,4 +1,4 @@
-export default function LoadingPage() {
+export default function LoadingPage({ heading, para }) {
     return (
         <div className="relative flex min-h-[75vh] items-center justify-center overflow-hidden">
 
@@ -40,11 +40,11 @@ export default function LoadingPage() {
                 </div>
 
                 <h1 className="mt-8 text-center text-3xl font-bold text-slate-800">
-                    Loading Learboard
+                    {heading}
                 </h1>
 
                 <p className="mt-3 text-center text-slate-500">
-                    Please wait. Thank you for your patience!
+                    {para}
                 </p>
 
                 <div className="mt-8 flex justify-center">

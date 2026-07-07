@@ -17,6 +17,7 @@ const userSchema = mongoose.Schema({
     },
     socketId: { type: String, default: "" },
     isOnline: { type: Boolean, default: false },
+    status: { type: String, default: "idle" },
     friends: [{
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
         name: { type: String, required: true }

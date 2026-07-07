@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { Chessboard } from '@gustavotoyota/react-chessboard';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import api from '../api/client';
 function Game() {
     const [refresh, setRefresh] = useState(null);
     const { user, authChecked } = useSelector((state) => state.authReducer);
@@ -20,25 +21,6 @@ function Game() {
     const [displayDraw, setDisplayDraw] = useState(false);
     const notify = (message) => toast(message);
     const navigate = useNavigate();
-
-    //console.log(messages, "Messages");
-    useEffect(() => {
-        socket.emit('chat:history', roomCode, (response) => {
-            if (!response.ok) {
-                notify(response.message);
-                return;
-            }
-
-            setMessages(response.messages);
-        })
-
-    }, [refresh]);
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({
-            behavior: 'smooth'
-        })
-    }, [messages]);
 
     useEffect(() => {
         connectSocket();
@@ -124,12 +106,61 @@ function Game() {
         }
     }, []);
 
+
+    //console.log(messages, "Messages");
+    useEffect(() => {
+        socket.emit('chat:history', roomCode, (response) => {
+            if (!response.ok) {
+                notify(response.message);
+                return;
+            }
+
+            setMessages(response.messages);
+        })
+
+    }, [refresh]);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({
+            behavior: 'smooth'
+        })
+    }, [messages]);
+
+    async function changeUserStatus() {
+        try {
+            const res = await api.post('/user/changeUserStatus', { status: "In Game" });
+            notify(res?.data?.message);
+            return;
+        } catch (err) {
+            notify(err?.response?.message);
+            return;
+        }
+    }
+    useEffect(() => {
+        changeUserStatus();
+
+        return async () => {
+            try {
+                const res = await api.post('/user/changeUserStatus', { status: "idle" });
+                notify(res?.data?.message);
+                return;
+            } catch (err) {
+                notify(err?.response?.message);
+                return;
+            }
+        }
+    }, []);
+
     if (!authChecked) {
         return <div>Loading .....!</div>
     }
 
     if (!user) {
         return <Navigate to="/login" replace />
+    }
+
+    if (room?.status === "ready" && room?.players?.length < 2) {
+        console.log()
     }
 
     //console.log(room, user);
@@ -246,7 +277,7 @@ function Game() {
                     className="rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-4 sm:px-6 py-2 sm:py-3 font-semibold text-white shadow-md hover:from-rose-600 hover:to-red-700 transition text-sm sm:text-base"
                     onClick={leaveRoom}
                 >
-                    Leave Room
+                    Leave Game
                 </button>
             </div>
 
@@ -519,21 +550,6 @@ function Game() {
                             </button>
                         </div>
 
-                        {/* <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
-                            {
-                                messages.map((m, index) => {
-                                    return (
-                                        m.userId.toString() === user._id.toString() ?
-                                            <div className='flex justify-end' key={m.text + index}>
-                                                <h1>You : {m.text}</h1>
-                                            </div> :
-                                            <div className='flex justify-start' key={m.text + index}>
-                                                <h1>{opponentPlayer?.name}: {m.text}</h1>
-                                            </div>
-                                    )
-                                })
-                            }
-                        </div> */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 bg-gray-100">
                             {messages.map((m, index) => {
                                 const isMe = m.userId.toString() === user._id.toString();

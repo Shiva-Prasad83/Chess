@@ -44,10 +44,10 @@ function Profile() {
     useEffect(() => {
         fetchUser();
     }, [imageUrl]);
-    useEffect(() => {
-        connectSocket();
-        socket.emit('user:online', user._id);
-    })
+    // useEffect(() => {
+    //     connectSocket();
+    //     socket.emit('user:online', user._id);
+    // })
     async function uploadProfile(e) {
         e.preventDefault();
         const formData = new FormData();
@@ -269,8 +269,12 @@ function Profile() {
                                     match.whiteId._id.toString() === user._id.toString()
                                         ? "white"
                                         : "black";
-
-                                const meWon = color === match.result;
+                                let meWon;
+                                if (match.result !== "draw") {
+                                    meWon = color === match.result;
+                                } else {
+                                    meWon = "draw";
+                                }
 
                                 return (
                                     <div
@@ -305,12 +309,12 @@ function Profile() {
                                             </div>
 
                                             <div
-                                                className={`font-bold px-5 py-2 rounded-full h-fit ${meWon
-                                                    ? "bg-green-500"
-                                                    : "bg-red-500"
+                                                className={`font-bold px-5 py-2 rounded-full h-fit ${meWon === "draw" ? "bg-white text-black" :
+                                                    meWon ? "bg-green-500"
+                                                        : "bg-red-500"
                                                     }`}
                                             >
-                                                {meWon ? "Victory" : "Defeat"}
+                                                {meWon === "draw" ? "Draw" : meWon ? "Victory" : "Defeat"}
                                             </div>
 
                                         </div>

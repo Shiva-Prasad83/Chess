@@ -1,6 +1,7 @@
 import React from 'react'
 import { Outlet, Navigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
+import LoadingPage from './LoadingPage';
 function ProtectedRoute() {
     const { user, authChecked } = useSelector((state) => state.authReducer);
     //console.log(user);
@@ -28,7 +29,7 @@ function ProtectedRoute() {
 
 
     if (!authChecked) {
-        return <div>Loading !!!</div>
+        return <LoadingPage heading={'Loading User Details'} para={'Please wait'} />
     }
     if (!user) {
         return <Navigate to="/login" />

@@ -4,8 +4,10 @@ import { useNavigate, useParams, Link, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
+import api from '../api/client';
 function Room() {
     const [room, setRoom] = useState(null);
+    const [refresh, setRefresh] = useState("");
     // const [roomCreator, setRoomCreator] = useState(false);
     const [showBoard, setShowBoard] = useState(false);
     const { roomCode } = useParams();
@@ -21,8 +23,33 @@ function Room() {
         navigate(`/rooms/${roomCode}`)
         // connectSocket();
         // socket.emit('user:online', user?._id);
-    }, [room]);
+    }, [refresh]);
 
+    async function changeUserStatus() {
+        console.log('Calling changing status');
+        try {
+            const res = await api.post('/user/changeUserStatus', { status: "In Room" });
+            notify(res?.data?.message);
+            return;
+        } catch (err) {
+            notify(err?.response?.message);
+            return;
+        }
+    }
+    useEffect(() => {
+        changeUserStatus();
+
+        return async () => {
+            try {
+                const res = await api.post('/user/changeUserStatus', { status: "idle" });
+                notify(res?.data?.message);
+                return;
+            } catch (err) {
+                notify(err?.response?.message);
+                return;
+            }
+        }
+    }, [])
     useEffect(() => {
         connectSocket();
         //joining room, for the second time, even if the room creator also will be joined the room for the second time because
@@ -50,6 +77,7 @@ function Room() {
             socket.off('room:presence', roomPresence);
             socket.off('game:started', gameStart);
         }
+
     }, [roomCode]);
 
     const meExistInRoom = room?.players.some((player) => player.userId.toString() === user._id.toString());

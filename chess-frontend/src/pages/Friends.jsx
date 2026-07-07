@@ -107,6 +107,7 @@ function Friends() {
             console.log(err);
         }
     }
+    console.log(myFriends, "my friends");
     return (
         <div className="space-y-8">
             <div className="text-center">
@@ -217,9 +218,18 @@ function Friends() {
                                 {friend.isOnline && (
 
                                     <button
-                                        className="cursor-pointer mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 py-3 font-semibold text-white transition hover:scale-105"
+                                        className="cursor-pointer mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 py-3 font-semibold
+                                         text-white transition hover:scale-105
+                                         disabled:cursor-not-allowed
+                                         disabled:opacity-50
+                                       disabled:hover:from-rose-500
+                                       disabled:hover:to-red-600
+                                         "
+                                        disabled={friend.status === "In Room" || friend.status === "In Game" ? true : false}
                                     >
-                                        🎮 Invite to Game
+                                        {
+                                            friend.status === "In Room" ? "In Room" : friend.status === "In Game" ? "In Game" : "🎮 Invite to Game"
+                                        }
                                     </button>
 
                                 )}

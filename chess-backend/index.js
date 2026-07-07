@@ -16,6 +16,7 @@ const parser = require('./utilities/uploadProfile.js');
 const { timeStamp } = require('console');
 const Room = require('./models/rooms.model.js');
 const { verifyAuth } = require('./middlewares/verifyAuth.js');
+const { Mutex } = require("async-mutex");
 require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT;
@@ -129,6 +130,16 @@ function getPublicClock(room) {
 }
 
 
+const roomLocks = new Map();
+function getRoomLock(roomCode) {
+    if (!roomLocks.has(roomCode)) {
+        roomLocks.set(roomCode, new Mutex());
+    }
+
+    return roomLocks.get(roomCode);
+}
+
+
 //All rooms that are created will be stored in rooms map.
 // let rooms = new Map();
 /*Structure -->
@@ -156,7 +167,7 @@ function getPublicClock(room) {
  }
 */
 async function updateUsersWithGameDetails(room, result, reason) {
-    console.log("Running on time out");
+    //console.log("Running on time out");
     //console.log(result, "Result from backend");
     //Compare the maxWinning before currentWinningStreak becomes 0.
     try {
@@ -191,7 +202,7 @@ async function updateUsersWithGameDetails(room, result, reason) {
             //else -8 rating.
             blackUser.stats.rating -= blackUser.stats.rating >= whiteUser.stats.rating ? 12 : 8;
         } else if (result === "black") {
-            console.log("Saving Black player details");
+            //console.log("Saving Black player details");
             blackUser.stats.wins += 1;
             blackUser.stats.gamesPlayed += 1;
             blackUser.stats.currentWinningStreak += 1;
@@ -218,7 +229,16 @@ io.on('connection', (socket) => {
     //console.log("A User Connected with socket_id: ", socket.id);
     socket.on('user:online', async (userId) => {
         try {
+            // const user = await User.findById(userId);
+            // user.isOnline = true;
+            // user.socketId = socket.id;
+            // await user.save();
+            if (!userId) return;
             const user = await User.findById(userId);
+            if (!user) {
+                console.log('user:online — no user found for id:', userId);
+                return;
+            }
             user.isOnline = true;
             user.socketId = socket.id;
             await user.save();
@@ -382,123 +402,135 @@ io.on('connection', (socket) => {
     })
 
     socket.on('room:join', async (roomCode, ack) => {
-        /*
-        Get the roomCode and ack function from the frontend
-        Step 1:Check if the room exists in the rooms with rooms.get(roomCode)
-        Step 2:Check if the user is already in the room.(This case is possible when the user joined
-        the room and somehow the socket connection is disconnected and user tries to join the room
-        again with same roomCode. In this case we need to change the socketId of the user.Because
-        in players array, the user will have disconnected socketId.
-        )
-        Step 3:If the user is part of the room, then check the length of players array, if the
-        length ==2 then, return ack({ok:false,message:"Room is full"}).
-        Step 4:Else, join the user to the room and update the status to "ready"
-        */
-        try {
-            const existingRoomFromDB = await Room.findOne({ roomCode });
-            //const existingRoom = rooms.get(roomCode);
-            // console.log(existingRoom, "Trying to join the room");
-            if (!existingRoomFromDB) {
-                //console.log(existingRoomFromDB, 'error while joining the room');
-                return ack({ ok: false, message: 'Room Not Found' });
-            }
-            //Case Step 2:
-            let alreadyExists = existingRoomFromDB.players.some((player) => {
-                return player.userId.toString() === socket.user._id.toString()
-            });
+        const lock = getRoomLock(roomCode);
 
-            if (!alreadyExists) {
-                //console.log('user not exists')
-                //console.log(existingRoom, "Checking players.length");
-                if (existingRoomFromDB.players.length === 2) {
-                    //console.log('Room is full');
-                    return ack({ ok: false, message: "Room is full" })
+        await lock.runExclusive(async () => {
+            /*
+            Get the roomCode and ack function from the frontend
+            Step 1:Check if the room exists in the rooms with rooms.get(roomCode)
+            Step 2:Check if the user is already in the room.(This case is possible when the user joined
+            the room and somehow the socket connection is disconnected and user tries to join the room
+            again with same roomCode. In this case we need to change the socketId of the user.Because
+            in players array, the user will have disconnected socketId.
+            )
+            Step 3:If the user is part of the room, then check the length of players array, if the
+            length ==2 then, return ack({ok:false,message:"Room is full"}).
+            Step 4:Else, join the user to the room and update the status to "ready"
+            */
+            try {
+                const existingRoomFromDB = await Room.findOne({ roomCode });
+                //const existingRoom = rooms.get(roomCode);
+                // console.log(existingRoom, "Trying to join the room");
+                if (!existingRoomFromDB) {
+                    //console.log(existingRoomFromDB, 'error while joining the room');
+                    return ack({ ok: false, message: 'Room Not Found' });
                 }
+                //Case Step 2:
+                let alreadyExists = existingRoomFromDB.players.some((player) => {
+                    return player.userId.toString() === socket.user._id.toString()
+                });
+
+                if (!alreadyExists) {
+                    //console.log('user not exists')
+                    //console.log(existingRoom, "Checking players.length");
+                    if (existingRoomFromDB.players.length === 2) {
+                        //console.log('Room is full');
+                        return ack({ ok: false, message: "Room is full" })
+                    }
+                    // existingRoom.players.push({
+                    //     userId: socket.user._id,
+                    //     socketId: socket.id,
+                    //     name: socket.user.name
+                    // })
+                    existingRoomFromDB.players.push({
+                        userId: socket.user._id,
+                        socketId: socket.id,
+                        name: socket.user.name,
+                    })
+
+                } else {
+                    //If the user already in the room, but disconnected and tried to connect with new
+                    //socketId with same roomCode.
+                    //console.log('User already exits');
+                    // existingRoom.players = existingRoom.players.map((player) => {
+                    //     if (player.userId.toString() === socket.user._id.toString()) {
+                    //         return { ...player, socketId: socket.id };
+                    //     }
+                    //     return player;
+                    // });
+                    // existingRoomFromDB.players = existingRoomFromDB.players.map((p) => {
+                    //     if (p.userId.toString() === socket.user._id.toString()) {
+                    //         return { ...p, socketId: socket.id };
+                    //     }
+                    //     return p;
+                    // });
+                    const player = existingRoomFromDB.players.find(
+                        p => p.userId.toString() === socket.user._id.toString()
+                    );
+
+                    if (player) {
+                        player.socketId = socket.id;
+                    }
+                }
+                //existingRoom.status = existingRoom.players.length === 2 ? "ready" : "waiting";
+                //The player who joins the room first, will get the white pieces and player
+                //who joins second, will get black pieces.
+                if (existingRoomFromDB.players.length === 2) {
+                    // existingRoom.whiteId = existingRoom.players[0].userId;
+                    // existingRoom.blackId = existingRoom.players[1].userId;
+                    // existingRoom.status = "ready";
+
+                    existingRoomFromDB.whiteId = existingRoomFromDB.players[0].userId,
+                        existingRoomFromDB.blackId = existingRoomFromDB.players[1].userId,
+                        existingRoomFromDB.status = "ready";
+                    //Initializing the clock after two are joined.
+                    //This event will be emitted when user clicks join room button
+                    // As well as When User comes Game.jsx so, this will be executed two or three
+                    // times so that we get the lastest time for lastSwitch.\
+
+
+                    //On every page refresh, this room:join event is getting triggered, so on refresh
+                    //this code executes, if the if condition is not written, then on every refresh the 
+                    //the clock.active will be white "w" it should not be the case. That we added the if condition.
+                    // if (!existingRoomFromDB.clock.running) {
+                    //     console.log('updating the clock');
+                    //     // existingRoom.clock.running = true;
+                    //     // existingRoom.clock.lastSwitch = Date.now();
+                    //     // existingRoom.clock.active = "w";
+
+                    //     existingRoomFromDB.clock.running = true;
+                    //     existingRoomFromDB.clock.lastSwitch = Date.now();
+                    //     existingRoomFromDB.clock.active = "w";
+                    // }
+                } else {
+                    //existingRoom.status = "waiting";
+
+                    existingRoomFromDB.status = "waiting";
+                }
+
+                await existingRoomFromDB.save();
+                socket.join(roomCode);
+                io.to(roomCode).emit("clock:update", getPublicClock(existingRoomFromDB));
+                io.to(roomCode).emit("room:presence", getPublicRoom(existingRoomFromDB));
+                return ack({ ok: true, room: getPublicRoom(existingRoomFromDB) });
+                //Own Understanding Code but some edge cases are missing.
+                // if (existingRoom.players.length >= 2) {
+                //     return ack({ ok: false, message: "Room is full" });
+                // }
+                // socket.join(roomCode);
                 // existingRoom.players.push({
                 //     userId: socket.user._id,
                 //     socketId: socket.id,
                 //     name: socket.user.name
-                // })
-                existingRoomFromDB.players.push({
-                    userId: socket.user._id,
-                    socketId: socket.id,
-                    name: socket.user.name,
-                })
-
-            } else {
-                //If the user already in the room, but disconnected and tried to connect with new
-                //socketId with same roomCode.
-                //console.log('User already exits');
-                // existingRoom.players = existingRoom.players.map((player) => {
-                //     if (player.userId.toString() === socket.user._id.toString()) {
-                //         return { ...player, socketId: socket.id };
-                //     }
-                //     return player;
                 // });
-                existingRoomFromDB.players = existingRoomFromDB.players.map((p) => {
-                    if (p.userId.toString() === socket.user._id.toString()) {
-                        return { ...p, socketId: socket.id };
-                    }
-                    return p;
-                });
+                // existingRoom.status = 'ready';
+                // return ack({ ok: true, room });
+            } catch (err) {
+                console.log(err, "joining error");
+                return ack({ ok: false, message: err.message || 'Failed to join Room' });
             }
-            //existingRoom.status = existingRoom.players.length === 2 ? "ready" : "waiting";
-            //The player who joins the room first, will get the white pieces and player
-            //who joins second, will get black pieces.
-            if (existingRoomFromDB.players.length === 2) {
-                // existingRoom.whiteId = existingRoom.players[0].userId;
-                // existingRoom.blackId = existingRoom.players[1].userId;
-                // existingRoom.status = "ready";
 
-                existingRoomFromDB.whiteId = existingRoomFromDB.players[0].userId,
-                    existingRoomFromDB.blackId = existingRoomFromDB.players[1].userId,
-                    existingRoomFromDB.status = "ready";
-                //Initializing the clock after two are joined.
-                //This event will be emitted when user clicks join room button
-                // As well as When User comes Game.jsx so, this will be executed two or three
-                // times so that we get the lastest time for lastSwitch.\
-
-
-                //On every page refresh, this room:join event is getting triggered, so on refresh
-                //this code executes, if the if condition is not written, then on every refresh the 
-                //the clock.active will be white "w" it should not be the case. That we added the if condition.
-                // if (!existingRoomFromDB.clock.running) {
-                //     console.log('updating the clock');
-                //     // existingRoom.clock.running = true;
-                //     // existingRoom.clock.lastSwitch = Date.now();
-                //     // existingRoom.clock.active = "w";
-
-                //     existingRoomFromDB.clock.running = true;
-                //     existingRoomFromDB.clock.lastSwitch = Date.now();
-                //     existingRoomFromDB.clock.active = "w";
-                // }
-            } else {
-                //existingRoom.status = "waiting";
-
-                existingRoomFromDB.status = "waiting";
-            }
-            socket.join(roomCode);
-
-            await existingRoomFromDB.save();
-            io.to(roomCode).emit("clock:update", getPublicClock(existingRoomFromDB));
-            io.to(roomCode).emit("room:presence", getPublicRoom(existingRoomFromDB));
-            return ack({ ok: true, room: getPublicRoom(existingRoomFromDB) });
-            //Own Understanding Code but some edge cases are missing.
-            // if (existingRoom.players.length >= 2) {
-            //     return ack({ ok: false, message: "Room is full" });
-            // }
-            // socket.join(roomCode);
-            // existingRoom.players.push({
-            //     userId: socket.user._id,
-            //     socketId: socket.id,
-            //     name: socket.user.name
-            // });
-            // existingRoom.status = 'ready';
-            // return ack({ ok: true, room });
-        } catch (err) {
-            console.log(err, "joining error");
-            return ack({ ok: false, message: err.message || 'Failed to join Room' });
-        }
+        })
     });
 
     socket.on('room:leave', async (roomCode, ack) => {
@@ -603,139 +635,143 @@ io.on('connection', (socket) => {
     by emitting the "game:over" event from backend.
     */
     socket.on("game:move", async (roomCode, from, to, promotion, ack) => {
-        try {
-            //const room = rooms.get(roomCode);
-            const room = await Room.findOne({ roomCode });
-            if (!room) return ack?.({ ok: false, message: "Room not found" });
-            let player = "none";
-            if (socket.user._id.toString() === room.whiteId.toString()) {
-                player = "w";
-            } else if (socket.user._id.toString() === room.blackId.toString()) {
-                player = "b";
-            }
-            if (player === "none") {
-                return ack?.({ ok: false, message: "Invalid Player" });
-            }
-            const game = new Chess(room.fen);
-            let turn = game.turn();//w or b turn
-            if (player !== turn) {
-                return ack?.({ ok: false, message: "Not your turn" });
-            }
-            let move = game.move({
-                from,
-                to,
-                promotion: 'q',
-            });
-            if (!move) {
-                return ack?.({ ok: false, message: "Invalid move" });
-            }
-            room.fen = game.fen();
-            room.lastMove = {
-                from,
-                to
-            }
-            let now = Date.now();
-            let timeCompleted = now - room.clock.lastSwitch;
-            if (room.clock.active === "w") {
-                room.clock.whiteMs -= timeCompleted;
-                room.clock.active = "b";
-                room.clock.lastSwitch = now;
-            } else {
-                room.clock.blackMs -= timeCompleted;
-                room.clock.active = "w";
-                room.clock.lastSwitch = now;
-            }
+        const lock = getRoomLock(roomCode);
 
-            //check if the timer of any player has become to zero and become - values
-            //If any player's timer reaches to zero or minus values then we need to end the game
-            //by emitting the game:over event
-            room.clock.whiteMs = Math.max(0, room.clock.whiteMs);
-            room.clock.blackMs = Math.max(0, room.clock.blackMs);
-            await room.save();
-            io.to(roomCode).emit("clock:update", getPublicClock(room));
-            if (room.clock.whiteMs === 0 || room.clock.blackMs === 0) {
-                room.clock.running = false;
-                const result = room.clock.whiteMs === 0 ? "black" : "white";
-                const reason = "timeout";
-                io.to(roomCode).emit("time:out", { result, reason });
-                //The game is over, so just saving the game to the database.
-                const playingGame = new Game({
-                    roomCode,
-                    whiteId: room.whiteId,
-                    blackId: room.blackId,
-                    result,
-                    reason,
-                    startedAt: new Date(room.createdAt),
-                    endedAt: Date.now(),
-                    duration: Date.now() - room.createdAt
+        await lock.runExclusive(async () => {
+            try {
+                //const room = rooms.get(roomCode);
+                const room = await Room.findOne({ roomCode });
+                if (!room) return ack?.({ ok: false, message: "Room not found" });
+                let player = "none";
+                if (socket.user._id.toString() === room.whiteId.toString()) {
+                    player = "w";
+                } else if (socket.user._id.toString() === room.blackId.toString()) {
+                    player = "b";
+                }
+                if (player === "none") {
+                    return ack?.({ ok: false, message: "Invalid Player" });
+                }
+                const game = new Chess(room.fen);
+                let turn = game.turn();//w or b turn
+                if (player !== turn) {
+                    return ack?.({ ok: false, message: "Not your turn" });
+                }
+                let move = game.move({
+                    from,
+                    to,
+                    promotion: 'q',
                 });
-                await updateUsersWithGameDetails(room, result, reason);
-                await playingGame.save();
-                //await Room.deleteOne(room);
-                //Just updating the players stats.
-                //emitting the game:over event.
-                return;
-            }
-
-            //"game:update" is the event emitted from backend to frontend whenever there is an update in a game.
-            io.to(roomCode).emit("game:update", getPublicState(room));
-
-            //Checking whether game is completed, the move could checkmate the opponent king.
-            if (game.isGameOver()) {
-                let reason = "others"
-                let result = "Draw";
-                // if (room.game.isCheckmate()) {
-                //     reason = "checkmate";
-                //     result = player == "w" ? "white" : "black";// room.game.turn()
-                // } else if (room.game.isDraw()) {
-                //     reason = "Draw";
-                //     result = "Draw"
-                // } else if (room.game.isStalemate()) {
-                //     reason = "Draw"
-                //     result = "Stalemate"
-                // } else if (room.game.isThreefoldRepetition()) {
-                //     reason = "Draw";
-                //     result = "Draw By Repetition"
-                //     console.log("Draw by repetition");
-                // } else if (room.game.isInsufficientMaterial()) {
-                //     reason = "Draw"
-                //     result = "Draw By Insufficient Material"
-                // }
-                if (game.isCheckmate()) {
-                    reason = "checkmate";
-                    result = player === "w" ? "white" : "black";
-                } else if (game.isThreefoldRepetition()) {
-                    reason = "threefold repetition";
-                    result = "draw";
-                } else if (game.isInsufficientMaterial()) {
-                    reason = "insufficient material";
-                    result = "draw";
-                } else if (game.isStalemate()) {
-                    reason = "stalemate";
-                    result = "draw";
-                } else if (game.isDraw()) {
-                    reason = "draw";
-                    result = "draw";
+                if (!move) {
+                    return ack?.({ ok: false, message: "Invalid move" });
+                }
+                room.fen = game.fen();
+                room.lastMove = {
+                    from,
+                    to
+                }
+                let now = Date.now();
+                let timeCompleted = now - room.clock.lastSwitch;
+                if (room.clock.active === "w") {
+                    room.clock.whiteMs -= timeCompleted;
+                    room.clock.active = "b";
+                    room.clock.lastSwitch = now;
+                } else {
+                    room.clock.blackMs -= timeCompleted;
+                    room.clock.active = "w";
+                    room.clock.lastSwitch = now;
                 }
 
-                const playingGame = new Game({
-                    roomCode,
-                    whiteId: room.whiteId,
-                    blackId: room.blackId,
-                    result,
-                    reason,
-                    startedAt: new Date(room.createdAt),
-                    endedAt: Date.now(),
-                    duration: Date.now() - room.createdAt
-                })
-                await playingGame.save();
-                await updateUsersWithGameDetails(room, result, reason);
-                //await Room.deleteOne(room);
-                io.to(roomCode).emit("game:over", { result, reason });
+                //check if the timer of any player has become to zero and become - values
+                //If any player's timer reaches to zero or minus values then we need to end the game
+                //by emitting the game:over event
+                room.clock.whiteMs = Math.max(0, room.clock.whiteMs);
+                room.clock.blackMs = Math.max(0, room.clock.blackMs);
+                await room.save();
+                io.to(roomCode).emit("clock:update", getPublicClock(room));
+                if (room.clock.whiteMs === 0 || room.clock.blackMs === 0) {
+                    room.clock.running = false;
+                    const result = room.clock.whiteMs === 0 ? "black" : "white";
+                    const reason = "timeout";
+                    io.to(roomCode).emit("time:out", { result, reason });
+                    //The game is over, so just saving the game to the database.
+                    const playingGame = new Game({
+                        roomCode,
+                        whiteId: room.whiteId,
+                        blackId: room.blackId,
+                        result,
+                        reason,
+                        startedAt: new Date(room.createdAt),
+                        endedAt: Date.now(),
+                        duration: Date.now() - room.createdAt
+                    });
+                    await updateUsersWithGameDetails(room, result, reason);
+                    await playingGame.save();
+                    //await Room.deleteOne(room);
+                    //Just updating the players stats.
+                    //emitting the game:over event.
+                    return;
+                }
+
+                //"game:update" is the event emitted from backend to frontend whenever there is an update in a game.
+                io.to(roomCode).emit("game:update", getPublicState(room));
+
+                //Checking whether game is completed, the move could checkmate the opponent king.
+                if (game.isGameOver()) {
+                    let reason = "others"
+                    let result = "Draw";
+                    // if (room.game.isCheckmate()) {
+                    //     reason = "checkmate";
+                    //     result = player == "w" ? "white" : "black";// room.game.turn()
+                    // } else if (room.game.isDraw()) {
+                    //     reason = "Draw";
+                    //     result = "Draw"
+                    // } else if (room.game.isStalemate()) {
+                    //     reason = "Draw"
+                    //     result = "Stalemate"
+                    // } else if (room.game.isThreefoldRepetition()) {
+                    //     reason = "Draw";
+                    //     result = "Draw By Repetition"
+                    //     console.log("Draw by repetition");
+                    // } else if (room.game.isInsufficientMaterial()) {
+                    //     reason = "Draw"
+                    //     result = "Draw By Insufficient Material"
+                    // }
+                    if (game.isCheckmate()) {
+                        reason = "checkmate";
+                        result = player === "w" ? "white" : "black";
+                    } else if (game.isThreefoldRepetition()) {
+                        reason = "threefold repetition";
+                        result = "draw";
+                    } else if (game.isInsufficientMaterial()) {
+                        reason = "insufficient material";
+                        result = "draw";
+                    } else if (game.isStalemate()) {
+                        reason = "stalemate";
+                        result = "draw";
+                    } else if (game.isDraw()) {
+                        reason = "draw";
+                        result = "draw";
+                    }
+
+                    const playingGame = new Game({
+                        roomCode,
+                        whiteId: room.whiteId,
+                        blackId: room.blackId,
+                        result,
+                        reason,
+                        startedAt: new Date(room.createdAt),
+                        endedAt: Date.now(),
+                        duration: Date.now() - room.createdAt
+                    })
+                    await playingGame.save();
+                    await updateUsersWithGameDetails(room, result, reason);
+                    //await Room.deleteOne(room);
+                    io.to(roomCode).emit("game:over", { result, reason });
+                }
+            } catch (err) {
+                return ack?.({ ok: false, message: err.message });
             }
-        } catch (err) {
-            return ack?.({ ok: false, message: err.message });
-        }
+        })
     })
 
     socket.on('send:message', async (roomCode, text, ack) => {

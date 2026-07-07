@@ -13,7 +13,7 @@ function Layout() {
             const res = await dispatch(logout()).unwrap();
             console.log(res, 'Response after logout');
             if (res.message === "OK") {
-                toast('Logout Successful');
+                //toast('Logout Successful');
                 navigate('/login');
             }
         } catch (err) {

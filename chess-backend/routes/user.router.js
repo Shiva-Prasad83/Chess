@@ -1,5 +1,5 @@
 const express = require('express');
-const { getUser, recentMatches, findUsers, sendFriendRequest, getFriendRequests, acceptFriendRequest, rejectFriendRequest, getFriends } = require('../controllers/user.controller');
+const { getUser, recentMatches, findUsers, sendFriendRequest, getFriendRequests, acceptFriendRequest, rejectFriendRequest, getFriends, changeStatus } = require('../controllers/user.controller');
 const { verifyAuth } = require('../middlewares/verifyAuth');
 
 const userRouter = express.Router();
@@ -12,4 +12,5 @@ userRouter.get('/friendRequests', verifyAuth, getFriendRequests);
 userRouter.get('/acceptFriendRequest/:friendId', verifyAuth, acceptFriendRequest);
 userRouter.get('/rejectFriendRequest/:friendId', verifyAuth, rejectFriendRequest);
 userRouter.get('/friends', verifyAuth, getFriends)
+userRouter.post('/changeUserStatus', verifyAuth, changeStatus);
 module.exports = { userRouter };

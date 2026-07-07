@@ -32,7 +32,7 @@ function Login() {
         try {
             const res = await dispatch(login({ email, password })).unwrap();
             console.log(res, "thunk response");
-            notify('Login Success');
+            //notify('Login Success');
             if (res.message === "OK") {
                 const user = await dispatch(fetchMe()).unwrap();
                 //console.log(user, "hitting fetchMe after logging in");
