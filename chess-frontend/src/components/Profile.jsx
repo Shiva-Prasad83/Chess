@@ -24,7 +24,6 @@ function Profile() {
     async function fetchUser() {
         try {
             const res = await api.get(`/user/getUser/${name}`);
-            //console.log(res);
             setUser(res.data);
         } catch (err) {
             console.log(err);
@@ -35,7 +34,6 @@ function Profile() {
         setOpen(true);
         try {
             const response = await api.get(`/user/getMatches/${user._id}`);
-            //console.log(matches);
             setMatches(response.data.matches);
         } catch (err) {
             console.log(err);
@@ -44,10 +42,12 @@ function Profile() {
     useEffect(() => {
         fetchUser();
     }, [imageUrl]);
-    // useEffect(() => {
-    //     connectSocket();
-    //     socket.emit('user:online', user._id);
-    // })
+
+    useEffect(() => {
+        connectSocket();
+        socket.emit('user:online', loggedInUser?._id);
+    }, []);
+
     async function uploadProfile(e) {
         e.preventDefault();
         const formData = new FormData();

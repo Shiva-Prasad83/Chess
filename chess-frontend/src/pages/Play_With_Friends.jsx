@@ -61,7 +61,9 @@ function Play_With_Friends() {
 
                 <div className="group relative overflow-hidden rounded-2xl border-t-4 border-indigo-600 bg-white p-6 shadow-lg shadow-indigo-900/5 transition hover:-translate-y-1 hover:shadow-xl sm:p-8 md:mr-10">
                     <div className="flex flex-col items-center text-center">
-                        <div className="mb-5 grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-4xl text-white shadow-lg shadow-indigo-500/40">
+                        <div
+                            onClick={createRoom}
+                            className="mb-5 cursor-pointer grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-4xl text-white shadow-lg shadow-indigo-500/40">
                             ＋
                         </div>
                         <h3 className="text-2xl font-extrabold text-indigo-700">Create Room</h3>
@@ -95,7 +97,9 @@ function Play_With_Friends() {
 
                 <div className="group relative overflow-hidden rounded-2xl border-t-4 border-emerald-600 bg-white p-6 shadow-lg shadow-emerald-900/5 transition hover:-translate-y-1 hover:shadow-xl sm:p-8 md:ml-10">
                     <div className="flex flex-col items-center text-center">
-                        <div className="mb-5 grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-4xl text-white shadow-lg shadow-emerald-500/40">
+                        <div
+                            onClick={joinRoom}
+                            className="mb-5 cursor-pointer grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-4xl text-white shadow-lg shadow-emerald-500/40">
                             ⇥
                         </div>
                         <h3 className="text-2xl font-extrabold text-emerald-700">Join Room</h3>

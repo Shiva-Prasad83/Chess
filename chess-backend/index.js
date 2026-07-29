@@ -13,7 +13,6 @@ const User = require('./models/user.model.js');
 const { Game } = require('./models/game.model.js');
 const { leaderboardRouter } = require('./routes/leaderboard.router.js');
 const parser = require('./utilities/uploadProfile.js');
-const { timeStamp } = require('console');
 const Room = require('./models/rooms.model.js');
 const { verifyAuth } = require('./middlewares/verifyAuth.js');
 const { Mutex } = require("async-mutex");
@@ -275,7 +274,10 @@ io.on('connection', (socket) => {
                         break;
                     }
                 }
-
+                //Here we are directly starting the clock, because the game will be started
+                //Immediately when the onlineUsers set's length becomes 2.
+                //But whereas while creating the room, after the room's length becomes 2
+                // we don't start the game immediately. The creator will the start the room whenever he wants.
                 const room = new Room({
                     roomCode,
                     players: [{
@@ -310,6 +312,7 @@ io.on('connection', (socket) => {
             return ack?.({ ok: false, message: err.message });
         }
     });
+
     socket.on('leave:online', () => {
         onlineUsers.delete(socket.user._id);
         //console.log(onlineUsers, "after deleting");
@@ -935,9 +938,138 @@ io.on('connection', (socket) => {
         }
     })
 
+    socket.on('player:timeout', async (roomCode, playerId, ack) => {
+        try {
+            // const room = rooms.get(roomCode);
+            const room = await Room.findOne({ roomCode });
+            if (!room) return ack?.({ ok: false, message: "Invalid Room" });
+            const isPlayer = room.players.some((p) => p.userId.toString() === playerId.toString());
+            if (!isPlayer) {
+                return ack?.({ ok: false, message: "Invalid Player" });
+            }
+            const result = room.whiteId.toString() === playerId.toString() ? "black" : "white";
+            const reason = "timeout";
+            const game = new Game({
+                roomCode,
+                whiteId: room.whiteId,
+                blackId: room.blackId,
+                result,
+                reason,
+                startedAt: new Date(room.createdAt),
+                endedAt: Date.now(),
+                duration: Date.now() - room.createdAt
+            });
+            await game.save();
+            await updateUsersWithGameDetails(room, result, reason);
+            //await Room.deleteOne(room);
+            io.to(roomCode).emit('game:over', { result, reason });
+        } catch (err) {
+            return ack?.({ ok: false, message: err.message });
+        }
+    });
+
+
+    //Related inviting friend to play match
+    socket.on('invite:friend', async (friend, ack) => {
+        try {
+            //If the friend refreshes the page then the socket.id of the player is changed.Because on page mount we are making socket connection
+            //If we refresh the page socket is connected again so, socket.id is geneated and stored in the database
+            //Here we are checking if the socketId of the friend and the socket.id of that friend in the database is same or not.
+            //If not the emit event to the current socketId instead of the previous one.
+            //Instead of checking we are directly emitting event to updated socketId.
+            console.log('Inviting Friend');
+            const yourFriend = await User.findById(friend.userId);
+            if (!yourFriend) {
+                return ack?.({ ok: false, message: "Invalid Friend" });
+            }
+            let roomCode;
+            while (true) {
+                roomCode = getRoomCode();
+                const existingRoom = await Room.findOne({ roomCode });
+                if (!existingRoom) {
+                    break;
+                }
+            }
+            const room = new Room({
+                roomCode,
+                players: [
+                    {
+                        name: socket.user.name,
+                        socketId: socket.id,
+                        userId: socket.user._id
+                    },
+                    {
+                        name: yourFriend.name,
+                        socketId: yourFriend.socketId,
+                        userId: yourFriend._id
+                    }
+                ],
+                whiteId: socket.user._id,
+                blackId: yourFriend._id,
+                fen: new Chess().fen(),
+                //Here clock will be turned off, we'll make running as after opponent accepts the invite.
+                //Status also waiting.
+                clock: {
+                    whiteMs: 600000,
+                    blackMs: 600000,
+                    running: false,
+                    active: "w",
+                    lastSwitch: null
+                },
+                status: "waiting"
+            })
+            socket.join(roomCode);
+            await room.save();
+            //Here from will be sent to opponent,so that opponent will get to know from where this 
+            // invite is coming from.
+            //And when the opponent is accepting or rejecting the invite, then he'll the "from" object as "to" object.
+            io.to(yourFriend.socketId).emit('invite', { from: socket.user.name, fromUserId: socket.user._id, fromSocketId: socket.id, roomCode });
+            return ack?.({ ok: true, message: "Invite sent" });
+        } catch (err) {
+            console.log(err);
+            return ack?.({ ok: false, message: err.message || 'Error while sending invite' })
+        }
+    });
+
+    socket.on('invite:accept', async (roomCode, ack) => {
+        //If the opponent accepts the request, 
+        //--> Turn On the clock
+        //--> change the status to ready
+        //--> change the lastSwitch to Date.now()
+        //--> send the room to the frontend and in the frontend navigate the user to Game.jsx
+        try {
+            const room = await Room.findOne({ roomCode });
+            if (!room) {
+                return ack?.("Invalid room code");
+            }
+            room.status = "ready";
+            room.clock.running = true;
+            room.clock.lastSwitch = Date.now();
+            socket.join(roomCode);
+            await room.save();
+            io.to(roomCode).emit('start:game', roomCode);
+        } catch (err) {
+            return ack?.(err.message);
+        }
+    });
+
+    socket.on('invite:rejected', async (roomCode, to, from, ack) => {
+        try {
+            const room = await Room.findOne({ roomCode });
+            if (!room) {
+                return ack?.("Invaild Room Code");
+            }
+            await Room.deleteOne(room);
+            io.to(to).emit('invite:reject', `${from} rejected invite`);
+            return ack?.("Invite Rejected");
+        } catch (err) {
+            return ack?.(err.message)
+        }
+    });
+
 
     socket.on("disconnect", async () => {
-        console.log("Triggered");
+        //console.log("Triggered");
 
         try {
             if (!socket.user?._id) return;

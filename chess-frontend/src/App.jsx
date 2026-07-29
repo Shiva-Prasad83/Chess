@@ -16,12 +16,25 @@ import Leaderboard from './pages/Leaderboard'
 import PlayOnline from './pages/PlayOnline'
 import Play_With_Friends from './pages/Play_With_Friends'
 import Friends from './pages/Friends'
+import { socket } from './socket'
+import { gotInvite } from './slices/friendInviteSlice'
 function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
     dispatch(fetchMe());
   }, [dispatch]);
+
+  useEffect(() => {
+    //Multiple Friends can invite one friend.So we have to maintain one array of invites.
+    socket.on('invite', (inviteDetails) => {
+      console.log('Friend is inviting');
+      dispatch(gotInvite(inviteDetails));
+    })
+    return () => {
+      socket.disconnect();
+    }
+  }, [])
   return <BrowserRouter>
     <Routes>
       <Route element={<Layout />}>

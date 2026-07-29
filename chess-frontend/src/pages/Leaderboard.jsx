@@ -89,11 +89,15 @@ function Leaderboard() {
                                 </th>
 
                                 <th className="px-5 py-4 font-bold">
+                                    Draws
+                                </th>
+
+                                <th className="px-5 py-4 font-bold">
                                     Rating
                                 </th>
 
                                 <th className="px-5 py-4 font-bold">
-                                    Max Winning Streak
+                                    Max Win Streak
                                 </th>
 
                             </tr>
@@ -194,6 +198,10 @@ function Leaderboard() {
 
                                             <td className="px-5 py-4 text-center font-bold text-red-500">
                                                 {player.stats.loses}
+                                            </td>
+
+                                            <td className="px-5 py-4 text-center font-bold text-cyan-400">
+                                                {player.stats.draws}
                                             </td>
 
 

@@ -59,7 +59,7 @@ const initialState = {
     authChecked: false
 }
 
-console.log(initialState, 'initial State');
+//console.log(initialState, 'initial State');
 const authSlice = createSlice({
     name: 'auth',
     initialState,
@@ -97,7 +97,7 @@ const authSlice = createSlice({
             .addCase(fetchMe.pending, pending)
             .addCase(fetchMe.fulfilled, (state, action) => {
                 state.status = "success";
-                console.log(action.payload, "User in slice");
+                //console.log(action.payload, "User in slice");
                 state.user = action.payload;
                 state.error = null;
                 state.authChecked = true;

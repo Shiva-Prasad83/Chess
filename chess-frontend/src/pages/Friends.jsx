@@ -3,18 +3,6 @@ import { useSelector } from 'react-redux';
 import api from '../api/client';
 import { ToastContainer, toast } from 'react-toastify';
 import { connectSocket, socket } from '../socket';
-// function debounce(callback, delay) {
-//     let timer;
-
-//     return (e) => {
-//         if (timer) {
-//             clearTimeout(timer);
-//         }
-//         timer = setTimeout(() => {
-//             callback(e.target.value);
-//         }, delay);
-//     }
-// }
 
 function Friends() {
     const [showFriends, setShowFriends] = useState(true);
@@ -27,6 +15,7 @@ function Friends() {
     const [buttonText, setButtonText] = useState('Add Friend');
     const [refresh, setRefresh] = useState(false);
     const [myFriendRequests, setMyFriendRequests] = useState([]);
+    const [disableButton, setDisableButton] = useState(false);
     const { user } = useSelector((state) => state.authReducer);
     //trying query params
     async function getFriendRequests() {
@@ -41,7 +30,7 @@ function Friends() {
         try {
             const res = await api.get('/user/friends');
             setMyFriends(res.data.friends);
-            console.log(res.data.friends, "friends");
+            //console.log(res.data.friends, "friends");
         } catch (err) {
             console.log(err);
         }
@@ -60,7 +49,9 @@ function Friends() {
             const res = await api.get(`/user/search?name=${searchedFriend}`);
             //console.log(res);
             console.log(res.data);
-            setSearchedFriendsList(res.data);
+            if (res.data) {
+                setSearchedFriendsList(res.data);
+            }
             setSearchedFriend("");
         } catch (err) {
             if (err.response.status === 400) {
@@ -108,6 +99,13 @@ function Friends() {
         }
     }
     console.log(myFriends, "my friends");
+
+    function inviteFriend(friend) {
+        if (friend.status !== "idle") {
+            return;
+        }
+        socket.emit('invite:friend', friend);
+    }
     return (
         <div className="space-y-8">
             <div className="text-center">
@@ -225,7 +223,14 @@ function Friends() {
                                        disabled:hover:from-rose-500
                                        disabled:hover:to-red-600
                                          "
-                                        disabled={friend.status === "In Room" || friend.status === "In Game" ? true : false}
+                                        disabled={disableButton || friend.status === "In Room" || friend.status === "In Game" ? true : false}
+                                        onClick={() => {
+                                            setDisableButton(true);
+                                            setTimeout(() => {
+                                                setDisableButton(false);
+                                            }, 10000);
+                                            inviteFriend(friend)
+                                        }}
                                     >
                                         {
                                             friend.status === "In Room" ? "In Room" : friend.status === "In Game" ? "In Game" : "🎮 Invite to Game"
@@ -276,6 +281,7 @@ function Friends() {
                             value={searchedFriend}
                             onChange={(e) => setSearchedFriend(e.target.value)}
                             className="flex-1 rounded-xl border border-slate-300 px-5 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300"
+                            required
                         />
 
                         <button

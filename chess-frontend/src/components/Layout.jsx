@@ -22,7 +22,7 @@ function Layout() {
     }
     return (
         <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 text-slate-900">
-            {/* Header */}
+
             {/* <nav className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 shadow-lg shadow-indigo-900/20">
                 <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
                     <Link to="/" className="group flex items-center gap-3">
@@ -61,7 +61,6 @@ function Layout() {
             <nav className="sticky top-0 z-50 border-b border-fuchsia-500/20 bg-gradient-to-r from-[#1b102f] via-[#2d174d] to-[#431c5d] shadow-2xl shadow-fuchsia-900/30">
                 <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
 
-                    {/* Logo */}
                     <Link
                         to="/"
                         className="group flex items-center gap-4"
@@ -84,7 +83,6 @@ function Layout() {
                         </div>
                     </Link>
 
-                    {/* Navigation */}
                     <div className="flex flex-wrap items-center gap-3">
 
                         {!user ? (
@@ -153,7 +151,6 @@ function Layout() {
                 </div>
             </nav>
 
-            {/* Main */}
             <main className="relative mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
                 {/* <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.06] select-none">
                     <span className="absolute -left-6 top-10 text-[12rem] leading-none">♙</span>

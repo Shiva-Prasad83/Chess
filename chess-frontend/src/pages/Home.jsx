@@ -137,7 +137,7 @@ function Home() {
 
 
             {/* How It Works */}
-            <div
+            {/* <div
                 className="
         mt-6
         rounded-3xl
@@ -195,8 +195,104 @@ function Home() {
 
                 </div>
 
-            </div>
+            </div> */}
+            {/* Features */}
+            {/* Features */}
+            <div
+                className="
+        mt-6
+        rounded-3xl
+        border border-blue-100
+        bg-gradient-to-r
+        from-blue-50
+        to-indigo-50
+        p-6
+        shadow-md
+    "
+            >
+                <h4 className="mb-6 flex items-center gap-2 text-lg font-extrabold text-slate-900">
+                    🚀 Features
+                </h4>
 
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+                    {[
+                        {
+                            icon: "🌍",
+                            title: "Play Online",
+                            desc: "Compete against players from anywhere in real-time with smooth gameplay."
+                        },
+                        {
+                            icon: "♟️",
+                            title: "Create & Join Rooms",
+                            desc: "Create private rooms or join existing ones using a room code."
+                        },
+                        {
+                            icon: "💬",
+                            title: "Live Chat",
+                            desc: "Chat with your opponent during the match without leaving the game."
+                        },
+                        {
+                            icon: "⏱️",
+                            title: "Real Chess Timers",
+                            desc: "Enjoy professional chess clocks with accurate countdown timers."
+                        },
+                        {
+                            icon: "🤝",
+                            title: "Friends System",
+                            desc: "Add friends and see who's online anytime."
+                        },
+                        {
+                            icon: "📨",
+                            title: "Instant Game Invites",
+                            desc: "Invite your online friends to play with a single click."
+                        },
+                        {
+                            icon: "🏳️",
+                            title: "Resign Match",
+                            desc: "Resign a game anytime when you're in a losing position."
+                        },
+                        {
+                            icon: "🤝",
+                            title: "Offer Draw",
+                            desc: "Send or accept draw requests during the game."
+                        },
+                        {
+                            icon: "🏆",
+                            title: "Live Leaderboard",
+                            desc: "Your rating updates instantly after every completed game."
+                        },
+                    ].map((feature) => (
+                        <div
+                            key={feature.title}
+                            className="
+                    rounded-2xl
+                    bg-white/80
+                    border
+                    border-white
+                    p-5
+                    shadow-sm
+                    transition
+                    hover:-translate-y-1
+                    hover:shadow-lg
+                "
+                        >
+                            <div className="text-4xl">
+                                {feature.icon}
+                            </div>
+
+                            <h5 className="mt-3 font-bold text-slate-900">
+                                {feature.title}
+                            </h5>
+
+                            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                                {feature.desc}
+                            </p>
+                        </div>
+                    ))}
+
+                </div>
+            </div>
 
             {/* Bottom Cards */}
             <div className="mt-6 grid gap-5 lg:grid-cols-2">

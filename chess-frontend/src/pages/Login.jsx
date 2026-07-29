@@ -41,7 +41,6 @@ function Login() {
         } catch (err) {
             notify(err);
         }
-
         e.target.reset();
     }
     return (

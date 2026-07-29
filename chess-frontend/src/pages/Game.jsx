@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { Chessboard } from '@gustavotoyota/react-chessboard';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import LoadingPage from '../components/LoadingPage';
 import api from '../api/client';
 function Game() {
     const [refresh, setRefresh] = useState(null);
@@ -13,8 +14,10 @@ function Game() {
     const [room, setRoom] = useState(null);
     const [result, setResult] = useState("");
     const [reason, setReason] = useState("");
-    const [whiteMs, setWhiteMs] = useState("");
-    const [blackMs, setBlackMs] = useState("");
+    const whiteTimerRef = useRef(null);
+    const blackTimerRef = useRef(null);
+    const [whiteTotalSeconds, setWhiteTotalSeconds] = useState(null);
+    const [blackTotalSeconds, setBlackTotalSeconds] = useState(null);
     const [messages, setMessages] = useState([]);
     const { roomCode } = useParams();
     const messagesEndRef = useRef();
@@ -64,8 +67,11 @@ function Game() {
             if (roomCode !== clock.roomCode) {
                 return;
             }
-            setWhiteMs(clock.whiteMs);
-            setBlackMs(clock.blackMs);
+            //setWhiteMs(clock.whiteMs);
+            setWhiteTotalSeconds(Math.floor(clock.whiteMs / 1000));
+
+            //setBlackMs(clock.blackMs);
+            setBlackTotalSeconds(Math.floor(clock.blackMs / 1000));
         }
         socket.on('clock:update', onClock);
         function newMessage(message) {
@@ -79,8 +85,10 @@ function Game() {
             }
             setFen(response.gameState.fen);
             setTurn(response.gameState.turn);
-            setWhiteMs(response?.clock.whiteMs);
-            setBlackMs(response?.clock.blackMs);
+            // setWhiteMs(response?.clock.whiteMs);
+            // setBlackMs(response?.clock.blackMs);
+            setBlackTotalSeconds(Math.floor((response?.clock.blackMs / 1000)));
+            setWhiteTotalSeconds(Math.floor((response?.clock.whiteMs / 1000)));
         })
         function offeredDraw() {
             setDisplayDraw(true);
@@ -151,8 +159,59 @@ function Game() {
         }
     }, []);
 
+
+    // const whiteMinutes = Math.floor((whiteMs / 1000) / 60).toString();
+    // const whiteSeconds = Math.floor((whiteMs / 1000) % 60).toString();
+
+    // const blackMinutes = Math.floor((blackMs / 1000) / 60).toString();
+    // const blackSeconds = Math.floor((blackMs / 1000) % 60).toString();
+
+    //Dynamic Chess Timers
+    //onDrop function we are stopping the timers like if turn is white then stop black timer.
+    useEffect(() => {
+        if (turn === "w") {
+            whiteTimerRef.current = setInterval(() => {
+                setWhiteTotalSeconds((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(whiteTimerRef.current);
+                        socket.emit('player:timeout', roomCode, room?.whiteId, (response) => {
+                            if (!response.ok) {
+                                notify(response.message);
+                                return;
+                            }
+                        });
+                        return 0;
+                    }
+                    return prev - 1;
+                })
+            }, 1000)
+        }
+        if (turn === "b") {
+            blackTimerRef.current = setInterval(() => {
+                setBlackTotalSeconds((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(blackTimerRef.current);
+                        socket.emit('player:timeout', roomCode, room?.blackId, (response) => {
+                            if (!response.ok) {
+                                notify(response.message);
+                                return;
+                            }
+                        });
+                        return 0;
+                    }
+                    return prev - 1;
+                })
+            }, 1000);
+        }
+        return () => {
+            clearInterval(whiteTimerRef.current);
+            clearInterval(blackTimerRef.current);
+        }
+    }, [whiteTotalSeconds, blackTotalSeconds]);
+
+
     if (!authChecked) {
-        return <div>Loading .....!</div>
+        return <LoadingPage />
     }
 
     if (!user) {
@@ -179,6 +238,12 @@ function Game() {
         if (!fen || fen === "start") {
             return false;
         }
+        if (turn === "w" && whiteTimerRef.current) {
+            clearInterval(whiteTimerRef.current);
+        }
+        if (turn === "b" && blackTimerRef.current) {
+            clearInterval(blackTimerRef.current);
+        }
         socket.emit("game:move", roomCode, from, to, 'q', (response) => {
             if (!response.ok) {
                 if (response.message.includes("Invalid move")) {
@@ -203,11 +268,17 @@ function Game() {
             return navigate('/lobby');
         })
     }
-    const whiteMinutes = Math.floor((whiteMs / 1000) / 60).toString();
-    const whiteSeconds = Math.floor((whiteMs / 1000) % 60).toString();
 
-    const blackMinutes = Math.floor((blackMs / 1000) / 60).toString();
-    const blackSeconds = Math.floor((blackMs / 1000) % 60).toString();
+
+    if (result) {
+        clearInterval(whiteTimerRef.current);
+        clearInterval(blackTimerRef.current);
+    }
+
+    const updatedWhiteMins = Math.floor((whiteTotalSeconds / 60)).toString();
+    const updatedWhiteSecs = (whiteTotalSeconds % 60).toString();
+    const updatedBlackMins = Math.floor(blackTotalSeconds / 60).toString();
+    const updatedBlackSecs = (blackTotalSeconds % 60).toString();
 
     function sendMessage(e) {
         e.preventDefault();
@@ -274,7 +345,7 @@ function Game() {
                     </div>
                 </div>
                 <button
-                    className="rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-4 sm:px-6 py-2 sm:py-3 font-semibold text-white shadow-md hover:from-rose-600 hover:to-red-700 transition text-sm sm:text-base"
+                    className="rounded-xl cursor-pointer bg-gradient-to-r from-rose-500 to-red-600 px-4 sm:px-6 py-2 sm:py-3 font-semibold text-white shadow-md hover:from-rose-600 hover:to-red-700 transition text-sm sm:text-base"
                     onClick={leaveRoom}
                 >
                     Leave Game
@@ -411,8 +482,8 @@ function Game() {
                                             <p className="text-xs text-slate-500">Time</p>
                                             <h2 className="font-mono text-xl sm:text-2xl font-bold text-slate-900">
                                                 {opponentPlayer?.userId?.toString() === room?.whiteId?.toString()
-                                                    ? `${whiteMinutes.padStart(2, "0")}:${whiteSeconds.padStart(2, "0")}`
-                                                    : `${blackMinutes.padStart(2, "0")}:${blackSeconds.padStart(2, "0")}`
+                                                    ? `${updatedWhiteMins.padStart(2, "0")}:${updatedWhiteSecs.padStart(2, "0")}`
+                                                    : `${updatedBlackMins.padStart(2, "0")}:${updatedBlackSecs.padStart(2, "0")}`
                                                 }
                                             </h2>
                                         </div>
@@ -491,8 +562,8 @@ function Game() {
                                             <p className="text-xs text-slate-500">Time</p>
                                             <h2 className="font-mono text-xl sm:text-2xl font-bold text-slate-900">
                                                 {user?._id.toString() === room?.whiteId?.toString()
-                                                    ? `${whiteMinutes.padStart(2, "0")}:${whiteSeconds.padStart(2, "0")}`
-                                                    : `${blackMinutes.padStart(2, "0")}:${blackSeconds.padStart(2, "0")}`
+                                                    ? `${updatedWhiteMins.padStart(2, "0")}:${updatedWhiteSecs.padStart(2, "0")}`
+                                                    : `${updatedBlackMins.padStart(2, "0")}:${updatedBlackSecs.padStart(2, "0")}`
                                                 }
                                             </h2>
                                         </div>
@@ -544,9 +615,6 @@ function Game() {
                         <div className="border-b p-4 flex gap-8">
                             <button className="font-semibold text-blue-600 border-b-2 border-blue-600 pb-2">
                                 Chat
-                            </button>
-                            <button className="font-semibold text-slate-500">
-                                Moves
                             </button>
                         </div>
 
