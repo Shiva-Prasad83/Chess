@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { socket } from '../socket';
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: 'http://localhost:5000/',
     withCredentials: true
 })
 
