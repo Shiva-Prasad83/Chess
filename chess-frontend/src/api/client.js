@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { socket } from '../socket';
 const api = axios.create({
-    baseURL: 'http://localhost:5000/',
+    baseURL: 'https://chess-backend-13eb.onrender.com',
     withCredentials: true
 })
 
