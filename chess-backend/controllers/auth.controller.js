@@ -52,6 +52,7 @@ const login = async (req, res) => {
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 15 * 60 * 1000
         })
 
@@ -64,6 +65,7 @@ const login = async (req, res) => {
             httpOnly: true,
             path: '/auth/refresh',
             secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000
         })
         return res.status(200).json({ message: 'OK' });
@@ -78,12 +80,14 @@ const logout = (req, res) => {
         res.clearCookie('accessToken', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 15 * 60 * 1000
         })
         res.clearCookie('refreshToken', {
             httpOnly: true,
             path: '/auth/refresh',
             secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000
         })
         //console.log(req.cookies, "Request.cookies");
@@ -118,6 +122,7 @@ const refresh = async (req, res) => {
             res.clearCookie(refreshToken, {
                 httpOnly: true,
                 path: '/auth/refresh',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
                 secure: process.env.NODE_ENV === "production",
                 maxAge: 7 * 24 * 60 * 60 * 1000
             })
@@ -127,6 +132,7 @@ const refresh = async (req, res) => {
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 15 * 60 * 1000
         })
         return res.status(201).json({ message: "OK" });

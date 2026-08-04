@@ -20,13 +20,24 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
+const allowedOrigins = [
+    "http://localhost:5173",
+    process.env.CLIENT_URL
+].filter(Boolean);
+// app.use(cors({
+//     origin: ["http://localhost:5173",
+//         process.env.CLIENT_URL],
+//     credentials: true
+// }))
 app.use(cors({
-    origin: ["http://localhost:5173",
-        process.env.CLIENT_URL],
+    origin: allowedOrigins,
     credentials: true
-}))
+}));
 app.use(express.json());
 app.use(cookieParser());
+app.get("/", (req, res) => {
+    res.send("Welcome to Chess Backend");
+});
 //uploading profile.
 app.post('/upload', verifyAuth, parser.single('profileImage'), async (req, res) => {
     try {
@@ -46,9 +57,13 @@ app.use('/user', userRouter);
 const server = http.createServer(app);
 
 const io = new Server(server, {
+    // cors: {
+    //     origin: ["http://localhost:5173",
+    //         process.env.CLIENT_URL],
+    //     credentials: true
+    // }
     cors: {
-        origin: ["http://localhost:5173",
-            process.env.CLIENT_URL],
+        origin: allowedOrigins,
         credentials: true
     }
 })
@@ -587,7 +602,7 @@ io.on('connection', (socket) => {
         //const room = rooms.get(roomCode);
         try {
             const room = await Room.findOne({ roomCode });
-            if (!room && room.players.length !== 2) {
+            if (!room || room.players.length !== 2) {
                 return ack?.({ ok: false, message: "Room doesn't exists" });
             }
             if (!room.clock.running) {
@@ -1085,16 +1100,18 @@ io.on('connection', (socket) => {
     });
 })
 
-server.listen(PORT, () => {
-    console.log('Server is running on port 5000');
-})
+
 
 mongoose
     .connect(MONGODB_URI)
     .then(() => {
+        server.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        })
         console.log('Connected to DB');
     })
     .catch((er) => {
         console.log('Error while connecting to DB');
     })
+
 
