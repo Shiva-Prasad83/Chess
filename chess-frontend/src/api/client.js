@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { socket } from '../socket';
 const api = axios.create({
-    baseURL: 'https://chess-backend-13eb.onrender.com',
+    baseURL: 'https://chess-ues5.vercel.app/',
     withCredentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 })
