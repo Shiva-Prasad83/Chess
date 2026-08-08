@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { socket } from '../socket';
 const api = axios.create({
-    baseURL: 'https://chess-ues5.vercel.app/',
+    baseURL: import.meta.env.VITE_API_URL,
     withCredentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 })
