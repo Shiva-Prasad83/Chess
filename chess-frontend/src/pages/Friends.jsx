@@ -48,7 +48,7 @@ function Friends() {
             //console.log(name, "searched name");
             const res = await api.get(`/user/search?name=${searchedFriend}`);
             //console.log(res);
-            console.log(res.data);
+            //console.log(res.data);
             if (res.data) {
                 setSearchedFriendsList(res.data);
             }
@@ -58,9 +58,9 @@ function Friends() {
                 //console.log('Inside if ')
                 toast.info("You cannot add yourself as a friend.");
             } else if (err.response.status === 401) {
-                toast.error('User Not found');
+                toast.error('User Not found! Please search by exact username');
             } else {
-                console.log('Inside else ')
+                //console.log('Inside else ')
                 console.log(err);
             }
             setSearchedFriend("");
@@ -277,7 +277,7 @@ function Friends() {
 
                         <input
                             type="text"
-                            placeholder="Search by username..."
+                            placeholder="Search by exact username..."
                             value={searchedFriend}
                             onChange={(e) => setSearchedFriend(e.target.value)}
                             className="flex-1 rounded-xl border border-slate-300 px-5 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300"
