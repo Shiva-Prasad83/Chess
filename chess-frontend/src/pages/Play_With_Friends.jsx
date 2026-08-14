@@ -31,6 +31,9 @@ function Play_With_Friends() {
 
     function joinRoom() {
         connectSocket();
+        if (!roomCode) {
+            return notify("Please Enter Room Code");
+        }
         //Here roomCode is the state variable which has the input value.
         socket.emit('room:join', roomCode, (response) => {
             console.log(response, "Join Room Response");
