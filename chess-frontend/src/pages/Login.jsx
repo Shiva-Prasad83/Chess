@@ -22,6 +22,10 @@ function Login() {
         const formData = new FormData(e.target);
         const email = formData.get('email')
         const password = formData.get('password');
+        if (!email || !password) {
+            e.target.reset()
+            return notify("Please fill all fields");
+        }
         //console.log(email, password);
         //.unwrap()is used because dispatch() will return the data from the authSlice
         //in the form of object

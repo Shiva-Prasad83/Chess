@@ -19,7 +19,10 @@ function Signup() {
         const name = formData.get('name');
         const email = formData.get('email');
         const password = formData.get('password');
-        console.log(name, email, password);
+        //console.log(name, email, password);
+        if (!name || !email || !password) {
+            return notify("Please fill all fields");
+        }
         try {
             const res = await dispatch(signup({ name, email, password })).unwrap();
             console.log(res, 'signup response');
