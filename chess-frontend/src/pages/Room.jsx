@@ -17,7 +17,7 @@ function Room() {
         //console.log(state.authReducer)
         return state.authReducer
     });
-    console.log(room);
+    //console.log(room);
     //console.log(user);
     useEffect(() => {
         navigate(`/rooms/${roomCode}`)
@@ -26,7 +26,7 @@ function Room() {
     }, [refresh]);
 
     async function changeUserStatus() {
-        console.log('Calling changing status');
+        //console.log('Calling changing status');
         try {
             const res = await api.post('/user/changeUserStatus', { status: "In Room" });
             notify(res?.data?.message);

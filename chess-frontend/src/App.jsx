@@ -7,7 +7,7 @@ import Signup from './pages/Signup'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Lobby from './pages/Lobby';
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { fetchMe } from './slices/authSlice'
 import Profile from './components/Profile'
 import Room from './pages/Room'
@@ -16,25 +16,32 @@ import Leaderboard from './pages/Leaderboard'
 import PlayOnline from './pages/PlayOnline'
 import Play_With_Friends from './pages/Play_With_Friends'
 import Friends from './pages/Friends'
-import { socket } from './socket'
+import { connectSocket, socket } from './socket'
 import { gotInvite } from './slices/friendInviteSlice'
 function App() {
   const dispatch = useDispatch();
-
+  const { user } = useSelector((state) => state.authReducer);
   useEffect(() => {
     dispatch(fetchMe());
   }, [dispatch]);
 
   useEffect(() => {
+    connectSocket()
     //Multiple Friends can invite one friend.So we have to maintain one array of invites.
     socket.on('invite', (inviteDetails) => {
-      console.log('Friend is inviting');
+      //console.log('Friend is inviting');
       dispatch(gotInvite(inviteDetails));
     })
     return () => {
       socket.disconnect();
     }
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      socket.emit('user:online', user._id)
+    }
+  }, [user])
   return <BrowserRouter>
     <Routes>
       <Route element={<Layout />}>

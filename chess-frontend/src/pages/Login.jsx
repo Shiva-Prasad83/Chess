@@ -37,10 +37,16 @@ function Login() {
             const res = await dispatch(login({ email, password })).unwrap();
             console.log(res, "thunk response");
             //notify('Login Success');
-            if (res.message === "OK") {
-                const user = await dispatch(fetchMe()).unwrap();
-                //console.log(user, "hitting fetchMe after logging in");
-            }
+
+            //This is creating issue becuase just after login we are fetching the user, to fetch
+            //the user we need accessToken and refreshToken. To create them it is taking some
+            //so that user is not able to login
+            //Instead of this approach I'll directly send the user object to the frontend on
+            //successful login and I'll update the user slice.
+            // if (res.message === "OK") {
+            //     const user = await dispatch(fetchMe()).unwrap();
+            //     //console.log(user, "hitting fetchMe after logging in");
+            // }
             navigate('/lobby');
         } catch (err) {
             notify(err);

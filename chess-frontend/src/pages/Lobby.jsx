@@ -14,10 +14,10 @@ function Lobby() {
         navigate('/play_with_friends');
         return;
     }
-    useEffect(() => {
-        connectSocket();
-        socket.emit('user:online', user._id);
-    }, [])
+    // useEffect(() => {
+    //     connectSocket();
+    //     socket.emit('user:online', user._id);
+    // }, [])
     return (
         // <div>
         //     <button onClick={play}>Play</button>

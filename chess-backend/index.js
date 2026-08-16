@@ -864,30 +864,34 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('request:draw', async (roomCode, opponentSocketId, ack) => {
+    socket.on('request:draw', async (roomCode, opponentUserId, ack) => {
         try {
+            console.log("Request came")
             const room = await Room.findOne({ roomCode });
+            const opponent = await User.findById(opponentUserId)
+            console.log(opponent)
             if (!room) {
                 return ack?.({ ok: false, message: "Invalid Room Code" });
             }
             const isPresent = room.players.some((p) => p.userId.toString() === socket.user._id.toString());
-            const isOpponentPresent = room.players.some((p) => p.socketId === opponentSocketId);
+            const isOpponentPresent = room.players.some((p) => p.userId.toString() === opponentUserId.toString());
             if (!isPresent) {
                 return ack?.({ ok: false, message: "Invalid Player" });
             }
             if (!isOpponentPresent) {
                 return ack?.({ ok: false, message: "Invalid Opponent socketId" });
             }
-            io.to(opponentSocketId).emit('offered:draw');
+            io.to(opponent.socketId).emit('offered:draw');
             return ack?.({ ok: true, message: "Offered Draw to Opponent" });
         } catch (err) {
             return ack?.({ ok: false, message: err.message });
         }
     })
 
-    socket.on('accept:draw', async (roomCode, opponentSocketId, ack) => {
+    socket.on('accept:draw', async (roomCode, opponentUserId, ack) => {
         try {
             const room = await Room.findOne({ roomCode });
+            const opponent = await User.findById(opponentUserId);
             if (!room) {
                 return ack?.({ ok: false, message: "Invalid Room Code" });
             }
@@ -895,7 +899,7 @@ io.on('connection', (socket) => {
             if (!isPlayer) {
                 return ack?.({ ok: false, message: "Invalid Player" });
             }
-            const isOpponentPresent = room.players.some((p) => p.socketId === opponentSocketId);
+            const isOpponentPresent = room.players.some((p) => p.userId.toString() === opponentUserId.toString());
             if (!isOpponentPresent) {
                 return ack?.({ ok: false, message: "Invalid Opponent socketId" });
             }
@@ -920,9 +924,10 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('reject:draw', async (roomCode, opponentSocketId, ack) => {
+    socket.on('reject:draw', async (roomCode, opponentUserId, ack) => {
         try {
             const room = await Room.findOne({ roomCode });
+            const opponent = await User.findById(opponentUserId)
             if (!room) {
                 return ack?.({ ok: false, message: "Invalid Room Code" });
             }
@@ -930,11 +935,11 @@ io.on('connection', (socket) => {
             if (!isPlayer) {
                 return ack?.({ ok: false, message: "Invalid Player" });
             }
-            const isOpponentPresent = room.players.some((p) => p.socketId === opponentSocketId);
+            const isOpponentPresent = room.players.some((p) => p.userId.toString() === opponentUserId.toString());
             if (!isOpponentPresent) {
                 return ack?.({ ok: false, message: "Invalid Opponent socketId" });
             }
-            io.to(opponentSocketId).emit('rejected:draw', "Draw Rejected");
+            io.to(opponent.socketId).emit('rejected:draw', "Draw Rejected");
             return;
         } catch (err) {
             return ack?.({ ok: false, message: err.message });

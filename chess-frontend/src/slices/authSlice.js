@@ -6,7 +6,7 @@ export const login = createAsyncThunk('auth/login', async ({ email, password }, 
         const res = await api.post('auth/login',
             { email, password }
         )
-        console.log(res.data, 'login res from api');
+        //console.log(res.data, 'login res from api');
         return res.data;
     } catch (err) {
         return thunkAPI.rejectWithValue(err.response?.data?.message || "login failed");
@@ -81,7 +81,11 @@ const authSlice = createSlice({
         }
         builder
             .addCase(login.pending, pending)
-            .addCase(login.fulfilled, fulfilled)
+            .addCase(login.fulfilled, (state, action) => {
+                state.status = 'success';
+                state.error = null
+                state.user = action.payload.user1;
+            })
             .addCase(login.rejected, rejected)
             .addCase(signup.pending, pending)
             .addCase(signup.fulfilled, fulfilled)

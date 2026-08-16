@@ -68,7 +68,10 @@ const login = async (req, res) => {
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000
         })
-        return res.status(200).json({ message: 'OK' });
+
+        const user1 = user.toObject();
+        delete user1.passwordHash;
+        return res.status(200).json({ message: 'OK', user1 });
     } catch (err) {
         return res.status(500).json({ message: err.message });
     }

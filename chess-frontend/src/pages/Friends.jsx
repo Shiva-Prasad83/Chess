@@ -72,7 +72,7 @@ function Friends() {
         setSearchedFriendsList("");
         try {
             const res = await api.post('/user/sendFriendRequest', { friendId, name });
-            console.log(res);
+            //console.log(res);
             setButtonText('Request sent');
             notify(res.data.message);
         } catch (err) {
@@ -98,7 +98,7 @@ function Friends() {
             console.log(err);
         }
     }
-    console.log(myFriends, "my friends");
+    //console.log(myFriends, "my friends");
 
     function inviteFriend(friend) {
         if (friend.status !== "idle") {

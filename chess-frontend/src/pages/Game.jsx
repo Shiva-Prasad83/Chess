@@ -63,7 +63,7 @@ function Game() {
 
         //clock is coming from the backend by emittin update:clock emit
         function onClock(clock) {
-            console.log(clock, "This is clock");
+            //console.log(clock, "This is clock");
             if (roomCode !== clock.roomCode) {
                 return;
             }
@@ -219,7 +219,7 @@ function Game() {
     }
 
     if (room?.status === "ready" && room?.players?.length < 2) {
-        console.log()
+        console.log("Please exit from the room")
     }
 
     //console.log(room, user);
@@ -234,7 +234,7 @@ function Game() {
     //onPieceDrop prop automatically sends the start position of the piece and end position of the
     //piece when it is dragged.
     function onDrop(from, to) {
-        console.log(from, to, "on Drop");
+        //console.log(from, to, "on Drop");
         if (!fen || fen === "start") {
             return false;
         }
@@ -289,7 +289,7 @@ function Game() {
                 notify(response.message);
                 return;
             }
-            console.log(response, 'message sent');
+            //console.log(response, 'message sent');
         })
         e.target.reset();
     }
@@ -302,7 +302,8 @@ function Game() {
         })
     }
     function requestDraw() {
-        socket.emit('request:draw', roomCode, opponentPlayer.socketId, (response) => {
+        //console.log("Requesting Draw")
+        socket.emit('request:draw', roomCode, opponentPlayer.userId, (response) => {
             if (!response.ok) {
                 return notify(response.message);
             }
@@ -310,7 +311,7 @@ function Game() {
         })
     }
     function acceptDraw() {
-        socket.emit('accept:draw', roomCode, opponentPlayer.socketId, (response) => {
+        socket.emit('accept:draw', roomCode, opponentPlayer.userId, (response) => {
             if (!response.ok) {
                 return notify(response.message);
             }
@@ -319,7 +320,7 @@ function Game() {
         setDisplayDraw(false);
     }
     function rejectDraw() {
-        socket.emit('reject:draw', roomCode, opponentPlayer.socketId, (response) => {
+        socket.emit('reject:draw', roomCode, opponentPlayer.userId, (response) => {
             if (!response.ok) {
                 return notify(response.message);
             }
