@@ -10,6 +10,7 @@ import Lobby from './pages/Lobby';
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchMe } from './slices/authSlice'
 import Profile from './components/Profile'
+
 import Room from './pages/Room'
 import Game from './pages/Game'
 import Leaderboard from './pages/Leaderboard'
